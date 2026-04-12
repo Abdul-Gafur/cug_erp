@@ -1,12 +1,10 @@
-/.phpunit.cache
 /node_modules
 /public/build
 /public/hot
 /public/storage
-/storage/installed
 /storage/*.key
-# /vendor
-# .env
+/vendor
+.env
 .env.backup
 .env.production
 .phpactor.json
@@ -16,8 +14,29 @@ Homestead.yaml
 auth.json
 npm-debug.log
 yarn-error.log
-composer.lock
-package-lock.json
 /.fleet
 /.idea
 /.vscode
+
+# Laravel-specific ignores
+/storage/app/public/*
+!/storage/app/public/.gitignore
+
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Development / OS specific
+.DS_Store
+Thumbs.db

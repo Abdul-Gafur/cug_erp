@@ -20,10 +20,10 @@ jobs:
       id: deploy-config
       run: |
         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          echo "deploy_path=/home/sites/40a/7/78c78ddab4/cug_erp" >> $GITHUB_OUTPUT
+          echo "deploy_path=/home/sites/40a/7/78c78ddab4/cugerp" >> $GITHUB_OUTPUT
           echo "env_name=Production" >> $GITHUB_OUTPUT
         elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-          echo "deploy_path=/home/sites/40a/7/78c78ddab4/testcug_erp" >> $GITHUB_OUTPUT
+          echo "deploy_path=/home/sites/40a/7/78c78ddab4/testcugerp" >> $GITHUB_OUTPUT
           echo "env_name=Staging" >> $GITHUB_OUTPUT
         else
           echo "Unknown branch, failing."
@@ -47,7 +47,7 @@ jobs:
 
     - name: 🔨 Install & Build Assets
       run: |
-        npm ci
+        npm install
         npm run build
         rm -rf node_modules
 
