@@ -102,19 +102,37 @@ export default function EmployeeDashboard({ message, stats }: EmployeeDashboardP
 
     const handleClockAction = () => {
         const endpoint = isClockedIn ? route('hrm.attendances.clock-out') : route('hrm.attendances.clock-in');
-        router.post(endpoint, {}, {
-            onSuccess: () => {
-                fetch(route('hrm.attendances.clock-status'))
-                    .then(response => response.json())
-                    .then(data => {
-                        setIsClockedIn(data.is_clocked_in);
-                        setClockTime(data.is_clocked_in ? data.clock_in_time : '--:--');
-                        setClockInTime(data.clock_in_time || '');
-                        setClockOutTime(data.clock_out_time || '');
-                        setTotalWorkingHours(data.total_working_hours || '');
-                    });
-            }
-        });
+        
+        const submitClockAction = (latitude?: number, longitude?: number) => {
+            router.post(endpoint, { latitude, longitude }, {
+                onSuccess: () => {
+                    fetch(route('hrm.attendances.clock-status'))
+                        .then(response => response.json())
+                        .then(data => {
+                            setIsClockedIn(data.is_clocked_in);
+                            setClockTime(data.is_clocked_in ? data.clock_in_time : '--:--');
+                            setClockInTime(data.clock_in_time || '');
+                            setClockOutTime(data.clock_out_time || '');
+                            setTotalWorkingHours(data.total_working_hours || '');
+                        });
+                }
+            });
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    submitClockAction(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error("Error getting geolocation:", error);
+                    submitClockAction(); // Backend will validate if geofencing is strict
+                },
+                { enableHighAccuracy: true }
+            );
+        } else {
+            submitClockAction();
+        }
     };
 
     return (

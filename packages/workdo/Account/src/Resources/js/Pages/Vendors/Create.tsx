@@ -9,18 +9,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import InputError from "@/components/ui/input-error";
 import { PhoneInputComponent } from "@/components/ui/phone-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreateVendorProps, CreateVendorFormData } from './types';
+import { CreateVendorProps, CreateVendorFormData, SUPPLIER_CATEGORIES } from './types';
 
 export default function Create({ onSuccess, users = [], auth }: CreateVendorProps) {
     const { t } = useTranslation();
     const { data, setData, post, processing, errors } = useForm<CreateVendorFormData>({
         user_id: '0',
         company_name: '',
+        registration_number: '',
+        tin_number: '',
+        supplier_category: '',
         contact_person_name: '',
         contact_person_email: '',
         contact_person_mobile: '',
         tax_number: '',
         payment_terms: '',
+        bank_name: '',
+        bank_branch: '',
+        bank_account_number: '',
+        bank_account_name: '',
+        performance_rating: '',
         billing_address: {
             name: '',
             address_line_1: '',
@@ -40,6 +48,8 @@ export default function Create({ onSuccess, users = [], auth }: CreateVendorProp
             zip_code: ''
         },
         same_as_billing: false,
+        is_blacklisted: false,
+        blacklist_reason: '',
         notes: '',
     });
 
@@ -72,7 +82,7 @@ export default function Create({ onSuccess, users = [], auth }: CreateVendorProp
     return (
         <DialogContent className="max-w-2xl">
             <DialogHeader>
-                <DialogTitle>{t('Create Vendor')}</DialogTitle>
+                <DialogTitle>{t('Register Supplier')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={submit} className="space-y-4">
                 <div>
@@ -101,15 +111,51 @@ export default function Create({ onSuccess, users = [], auth }: CreateVendorProp
                     </p>
                 </div>
                 <div>
-                    <Label htmlFor="company_name">{t('Company Name')}</Label>
+                    <Label htmlFor="company_name">{t('Company / Supplier Name')}</Label>
                     <Input
                         id="company_name"
                         value={data.company_name}
                         onChange={(e) => setData('company_name', e.target.value)}
-                        placeholder={t('Enter company name')}
+                        placeholder={t('Enter supplier name')}
                         required
                     />
                     <InputError message={errors.company_name} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="registration_number">{t('Registration Number')}</Label>
+                        <Input
+                            id="registration_number"
+                            value={data.registration_number}
+                            onChange={(e) => setData('registration_number', e.target.value)}
+                            placeholder={t('Company registration no.')}
+                        />
+                        <InputError message={errors.registration_number} />
+                    </div>
+                    <div>
+                        <Label htmlFor="tin_number">{t('TIN (Ghana Revenue Authority)')}</Label>
+                        <Input
+                            id="tin_number"
+                            value={data.tin_number}
+                            onChange={(e) => setData('tin_number', e.target.value)}
+                            placeholder={t('GRA Tax Identification Number')}
+                        />
+                        <InputError message={errors.tin_number} />
+                    </div>
+                </div>
+                <div>
+                    <Label htmlFor="supplier_category">{t('Supplier Category')}</Label>
+                    <Select value={data.supplier_category} onValueChange={(v) => setData('supplier_category', v)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder={t('Select category…')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Object.entries(SUPPLIER_CATEGORIES).map(([k, v]) => (
+                                <SelectItem key={k} value={k}>{t(v)}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <InputError message={errors.supplier_category} />
                 </div>
                 <div>
                     <Label htmlFor="contact_person_name">{t('Contact Person')}</Label>
@@ -344,6 +390,68 @@ export default function Create({ onSuccess, users = [], auth }: CreateVendorProp
                         </div>
                     </div>
                 )}
+                {/* Bank details for payment processing */}
+                <div className="border-t pt-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t('Bank Details (for payment)')}</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="bank_name">{t('Bank Name')}</Label>
+                            <Input
+                                id="bank_name"
+                                value={data.bank_name}
+                                onChange={(e) => setData('bank_name', e.target.value)}
+                                placeholder={t('e.g. GCB Bank')}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="bank_branch">{t('Branch')}</Label>
+                            <Input
+                                id="bank_branch"
+                                value={data.bank_branch}
+                                onChange={(e) => setData('bank_branch', e.target.value)}
+                                placeholder={t('Branch name')}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="bank_account_number">{t('Account Number')}</Label>
+                            <Input
+                                id="bank_account_number"
+                                value={data.bank_account_number}
+                                onChange={(e) => setData('bank_account_number', e.target.value)}
+                                placeholder={t('Bank account number')}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="bank_account_name">{t('Account Name')}</Label>
+                            <Input
+                                id="bank_account_name"
+                                value={data.bank_account_name}
+                                onChange={(e) => setData('bank_account_name', e.target.value)}
+                                placeholder={t('Name on bank account')}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <Label htmlFor="performance_rating">{t('Performance Rating (1–5)')}</Label>
+                    <Select value={data.performance_rating || 'unrated'} onValueChange={(v) => setData('performance_rating', v === 'unrated' ? '' : v)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder={t('Not yet rated')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="unrated">{t('Not yet rated')}</SelectItem>
+                            {[1, 2, 3, 4, 5].map(r => (
+                                <SelectItem key={r} value={String(r)}>
+                                    {r} — {['', t('Poor'), t('Below Average'), t('Average'), t('Good'), t('Excellent')][r]}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div>
                     <Label htmlFor="notes">{t('Notes')}</Label>
                     <Textarea

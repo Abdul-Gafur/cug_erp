@@ -54,7 +54,7 @@ return [
 
     'is_demo' => false,
 
-    'run_demo_seeder' => false,
+    'run_demo_seeder' => env('RUN_DEMO_SEEDER', false),
 
     /*
     |--------------------------------------------------------------------------

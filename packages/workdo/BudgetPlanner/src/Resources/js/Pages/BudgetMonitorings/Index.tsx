@@ -20,6 +20,7 @@ interface BudgetMonitoring {
     budget?: { budget_name: string; };
     monitoring_date: string;
     total_allocated: number;
+    total_committed: number;
     total_spent: number;
     total_remaining: number;
     variance_amount: number;
@@ -113,6 +114,12 @@ export default function Index() {
             render: (value: number) => formatCurrency(value)
         },
         {
+            key: 'total_committed',
+            header: t('Committed'),
+            sortable: false,
+            render: (value: number) => <span className="text-amber-700">{formatCurrency(value ?? 0)}</span>
+        },
+        {
             key: 'total_spent',
             header: t('Spent'),
             sortable: false,
@@ -123,6 +130,15 @@ export default function Index() {
             header: t('Remaining'),
             sortable: false,
             render: (value: number) => formatCurrency(value)
+        },
+        {
+            key: 'variance_amount',
+            header: t('Variance'),
+            sortable: false,
+            render: (value: number) => {
+                const v = Number(value || 0);
+                return <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-700'}>{formatCurrency(v)}</span>;
+            }
         },
         {
             key: 'variance_percentage',

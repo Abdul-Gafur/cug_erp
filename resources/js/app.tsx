@@ -24,7 +24,7 @@ const refreshToken = async () => {
             document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newToken);
             axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;
         }
-    } catch (e) {}
+    } catch (e) { }
 };
 
 router.on('before', (event) => {
@@ -45,7 +45,7 @@ router.on('error', async (event) => {
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {
     const [url, options] = args;
-    
+
     // Ensure fresh token before request
     if (options && options.method && options.method !== 'GET') {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -58,9 +58,9 @@ window.fetch = async (...args) => {
             (options.headers as any)['X-CSRF-TOKEN'] = newToken;
         }
     }
-    
+
     const response = await originalFetch(...args);
-    
+
     // Fallback: retry on 419 error
     if (response.status === 419) {
         await refreshToken();

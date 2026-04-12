@@ -21,9 +21,13 @@ class SalesQuotation extends Model
         'revision_number',
         'parent_quotation_id',
         'quotation_date',
+        'due_date',
+        'closing_date',
         'customer_id',
         'warehouse_id',
-        'due_date',
+        'department',
+        'pr_id',
+        'awarded_supplier_id',
         'subtotal',
         'tax_amount',
         'discount_amount',
@@ -40,19 +44,26 @@ class SalesQuotation extends Model
     protected function casts(): array
     {
         return [
-            'quotation_date' => 'date',
-            'due_date' => 'date',
-            'subtotal' => 'decimal:2',
-            'tax_amount' => 'decimal:2',
-            'discount_amount' => 'decimal:2',
-            'total_amount' => 'decimal:2',
+            'quotation_date'   => 'date',
+            'due_date'         => 'date',
+            'closing_date'     => 'date',
+            'subtotal'         => 'decimal:2',
+            'tax_amount'       => 'decimal:2',
+            'discount_amount'  => 'decimal:2',
+            'total_amount'     => 'decimal:2',
             'converted_to_invoice' => 'boolean',
         ];
     }
 
+    // Legacy relation name kept for backward compat — points to vendor/supplier user
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    public function awardedSupplier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'awarded_supplier_id');
     }
 
     public function items(): HasMany
@@ -78,6 +89,21 @@ class SalesQuotation extends Model
     public function revisions(): HasMany
     {
         return $this->hasMany(SalesQuotation::class, 'parent_quotation_id');
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(RfqSupplier::class, 'rfq_id');
+    }
+
+    public function evaluation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(RfqEvaluation::class, 'rfq_id');
+    }
+
+    public function lpo(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(LocalPurchaseOrder::class, 'rfq_id');
     }
 
     protected static function boot()

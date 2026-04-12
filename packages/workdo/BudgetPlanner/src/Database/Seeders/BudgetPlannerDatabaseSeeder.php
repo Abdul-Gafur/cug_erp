@@ -19,6 +19,7 @@ class BudgetPlannerDatabaseSeeder extends Seeder
         {
             $userId = User::where('email', 'company@example.com')->first()->id;
 
+            (new DemoVoteCostCentreSeeder())->run($userId);
             (new DemoBudgetPeriodSeeder())->run($userId);
             (new DemoBudgetSeeder())->run($userId);
             (new DemoBudgetAllocationSeeder())->run($userId);

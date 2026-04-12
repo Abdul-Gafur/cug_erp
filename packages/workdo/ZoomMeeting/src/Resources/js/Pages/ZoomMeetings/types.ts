@@ -3,6 +3,7 @@ import { PaginatedData, ModalState, AuthContext } from '@/types/common';
 export interface User {
     id: number;
     name: string;
+    avatar?: string;
 }
 
 export interface ZoomMeeting {
@@ -18,9 +19,11 @@ export interface ZoomMeeting {
     waiting_room: boolean;
     recording: boolean;
     status: string;
-    participants?: string[];
+    participants?: any;
     host_id?: number;
     host?: User;
+    join_url?: string;
+    start_url?: string;
     created_at: string;
 }
 

@@ -94,10 +94,7 @@ function CreateContent({ customers = [], warehouses = [], categories = [] }: Cre
         }
     }, [selectedWarehouse, selectedCategory]);
 
-    // Clear cart only when warehouse changes
-    useEffect(() => {
-        setCart([]);
-    }, [selectedWarehouse]);
+
 
     const handleSkuInput = (value: string) => {
         setSkuInput(value);

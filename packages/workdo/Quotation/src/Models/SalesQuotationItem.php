@@ -15,6 +15,7 @@ class SalesQuotationItem extends Model
     protected $fillable = [
         'quotation_id',
         'product_id',
+        'description',
         'quantity',
         'unit_price',
         'discount_percentage',

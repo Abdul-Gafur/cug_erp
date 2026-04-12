@@ -143,7 +143,7 @@ export default function Index() {
                 };
                 return (
                     <span className={`px-2 py-1 rounded-full text-sm ${priorityColors[value as keyof typeof priorityColors] || 'bg-gray-100 text-gray-800'}`}>
-                        {t(value?.charAt(0).toUpperCase() + value?.slice(1) || 'Unknown')}
+                        {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : t('Unknown')}
                     </span>
                 );
             }
@@ -160,7 +160,7 @@ export default function Index() {
                 };
                 return (
                     <span className={`px-2 py-1 rounded-full text-sm ${statusColors[value as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
-                        {t(value?.charAt(0).toUpperCase() + value?.slice(1) || 'Unknown')}
+                        {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : t('Unknown')}
                     </span>
                 );
             }
@@ -402,7 +402,7 @@ export default function Index() {
                                                                     announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' :
                                                                         'bg-red-100 text-red-800'
                                                                 }`}>
-                                                                {t(announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1))}
+                                                                {announcement.priority ? t(announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)) : '—'}
                                                             </span>
                                                         ) : '-'}
                                                     </div>
@@ -413,7 +413,7 @@ export default function Index() {
                                                                 announcement.status === 'inactive' ? 'bg-red-100 text-red-800' :
                                                                     'bg-blue-100 text-blue-800'
                                                                 }`}>
-                                                                {t(announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1))}
+                                                                {announcement.status ? t(announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)) : '—'}
                                                             </span>
                                                         ) : '-'}
                                                     </div>

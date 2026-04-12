@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Workdo\Quotation\Models\SalesQuotation;
 use Workdo\Quotation\Models\SalesQuotationItem;
 use Workdo\Quotation\Models\SalesQuotationItemTax;
+use Workdo\Quotation\Models\RfqSupplier;
+use Workdo\Quotation\Models\RfqEvaluation;
+use Workdo\Quotation\Models\RfqEvaluationCriterion;
 use Workdo\Quotation\Http\Requests\StoreQuotationRequest;
 use Workdo\Quotation\Http\Requests\UpdateQuotationRequest;
 use App\Models\User;
@@ -30,23 +33,17 @@ class QuotationController extends Controller
     public function index(Request $request)
     {
         if (Auth::user()->can('manage-quotations')) {
-            $query = SalesQuotation::with(['customer', 'items'])
+            $query = SalesQuotation::with(['awardedSupplier', 'suppliers.supplier', 'items'])
                 ->where(function ($q) {
                     if (Auth::user()->can('manage-any-quotations')) {
                         $q->where('created_by', creatorId());
                     } elseif (Auth::user()->can('manage-own-quotations')) {
-                        $q->where('creator_id', Auth::id())->orWhere('customer_id', Auth::id());
-                        if (Auth::user()->type == 'client') {
-                            $q->where('status', '!=', 'draft');
-                        }
+                        $q->where('creator_id', Auth::id());
                     } else {
                         $q->whereRaw('1 = 0');
                     }
                 });
-              // Apply filters
-            if ($request->customer_id) {
-                $query->where('customer_id', $request->customer_id);
-            }
+
             if ($request->status) {
                 $query->where('status', $request->status);
             }
@@ -60,11 +57,10 @@ class QuotationController extends Controller
                 }
             }
 
-              // Apply sorting
             $sortField     = $request->get('sort', 'created_at');
             $sortDirection = $request->get('direction', 'desc');
 
-            $allowedSortFields = ['quotation_number', 'quotation_date', 'due_date', 'subtotal', 'tax_amount', 'total_amount', 'status', 'created_at'];
+            $allowedSortFields = ['quotation_number', 'quotation_date', 'closing_date', 'total_amount', 'status', 'created_at'];
             if (!in_array($sortField, $allowedSortFields) || empty($sortField)) {
                 $sortField = 'created_at';
             }
@@ -73,27 +69,39 @@ class QuotationController extends Controller
 
             $perPage    = $request->get('per_page', 10);
             $quotations = $query->paginate($perPage);
-            $customers  = User::where('type', 'client')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
 
             return Inertia::render('Quotation/Quotations/Index', [
                 'quotations' => $quotations,
-                'customers'  => $customers,
-                'filters'    => $request->only(['customer_id', 'status', 'search', 'date_range'])
+                'filters'    => $request->only(['status', 'search', 'date_range']),
             ]);
         } else {
             return back()->with('error', __('Permission denied'));
         }
     }
 
-    public function create()
+    public function create(Request $request)
     {
         if (Auth::user()->can('create-quotations')) {
-            $customers  = User::where('type', 'client')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
+            $suppliers  = User::where('type', 'vendor')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
             $warehouses = Warehouse::where('is_active', true)->select('id', 'name', 'address')->where('created_by', creatorId())->get();
 
+            // Load Purchase Requisition if linked from the procurement workflow
+            $purchaseRequisition = null;
+            if ($request->pr_id) {
+                $purchaseRequisition = \Workdo\Procurement\Models\PurchaseRequisition::with([
+                        'items.account',
+                        'requestingDepartment',
+                        'budgetPeriod',
+                    ])
+                    ->where('created_by', creatorId())
+                    ->where('status', 'procurement_approved')
+                    ->find($request->pr_id);
+            }
+
             return Inertia::render('Quotation/Quotations/Create', [
-                'customers'  => $customers,
-                'warehouses' => $warehouses
+                'suppliers'            => $suppliers,
+                'warehouses'           => $warehouses,
+                'purchaseRequisition'  => $purchaseRequisition,
             ]);
         } else {
             return back()->with('error', __('Permission denied'));
@@ -108,7 +116,10 @@ class QuotationController extends Controller
             $quotation                  = new SalesQuotation();
             $quotation->quotation_date  = $request->invoice_date;
             $quotation->due_date        = $request->due_date;
-            $quotation->customer_id     = $request->customer_id;
+            $quotation->closing_date    = $request->closing_date;
+            $quotation->customer_id     = $request->customer_id ?? null;
+            $quotation->department      = $request->department;
+            $quotation->pr_id           = $request->pr_id;
             $quotation->warehouse_id    = $request->warehouse_id;
             $quotation->payment_terms   = $request->payment_terms;
             $quotation->notes           = $request->notes;
@@ -119,6 +130,22 @@ class QuotationController extends Controller
             $quotation->creator_id      = Auth::id();
             $quotation->created_by      = creatorId();
             $quotation->save();
+
+            // Save invited suppliers (Handle both new build 'invited_supplier_ids' and old build 'customer_id')
+            $supplierIds = $request->invited_supplier_ids ?? [];
+            if ($request->customer_id && !in_array($request->customer_id, $supplierIds)) {
+                $supplierIds[] = $request->customer_id;
+            }
+
+            foreach ($supplierIds as $supplierId) {
+                RfqSupplier::create([
+                    'rfq_id'      => $quotation->id,
+                    'supplier_id' => $supplierId,
+                    'status'      => 'invited',
+                    'creator_id'  => Auth::id(),
+                    'created_by'  => creatorId(),
+                ]);
+            }
 
               // Create quotation items
             $this->createQuotationItems($quotation->id, $request->items);
@@ -144,10 +171,24 @@ class QuotationController extends Controller
                 return redirect()->route('quotations.index')->with('error', __('Access denied'));
             }
 
-            $quotation->load(['customer', 'customerDetails', 'items.product', 'items.taxes', 'warehouse', 'parentQuotation']);
+            $quotation->load([
+                'awardedSupplier',
+                'suppliers.supplier',
+                'items.product',
+                'items.taxes',
+                'warehouse',
+                'parentQuotation',
+                'evaluation.criteria',
+                'evaluation.scores.supplier',
+                'evaluation.recommendedSupplier',
+                'lpo',
+            ]);
 
+            $suppliers = User::where('type', 'vendor')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
+            
             return Inertia::render('Quotation/Quotations/View', [
-                'quotation' => $quotation
+                'quotation' => $quotation,
+                'suppliers' => $suppliers,
             ]);
         } else {
             return redirect()->route('quotations.index')->with('error', __('Permission denied'));
@@ -162,17 +203,18 @@ class QuotationController extends Controller
             }
 
             if ($quotation->status != 'draft') {
-                return redirect()->route('quotations.index')->with('error', __('Cannot update sent quotation.'));
+                return redirect()->route('quotations.index')->with('error', __('Cannot update an issued RFQ.'));
             }
 
             $quotation->load(['items.taxes']);
-            $customers  = User::where('type', 'client')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
+            $suppliers  = User::where('type', 'vendor')->select('id', 'name', 'email')->where('created_by', creatorId())->get();
             $warehouses = Warehouse::where('is_active', true)->select('id', 'name', 'address')->where('created_by', creatorId())->get();
 
             return Inertia::render('Quotation/Quotations/Edit', [
                 'quotation'  => $quotation,
-                'customers'  => $customers,
-                'warehouses' => $warehouses
+                'suppliers'  => $suppliers,
+                'customers'  => $suppliers, // Compatibility with stale build
+                'warehouses' => $warehouses,
             ]);
         } else {
             return redirect()->route('quotations.index')->with('error', __('Permission denied'));
@@ -183,14 +225,17 @@ class QuotationController extends Controller
     {
         if (Auth::user()->can('edit-quotations') && $quotation->created_by == creatorId()) {
             if ($quotation->status != 'draft') {
-                return redirect()->route('quotations.index')->with('error', __('Cannot update sent quotation.'));
+                return redirect()->route('quotations.index')->with('error', __('Cannot update an issued RFQ.'));
             }
 
             $totals = $this->calculateTotals($request->items);
 
             $quotation->quotation_date  = $request->invoice_date;
             $quotation->due_date        = $request->due_date;
-            $quotation->customer_id     = $request->customer_id;
+            $quotation->closing_date    = $request->closing_date;
+            $quotation->customer_id     = $request->customer_id ?? null;
+            $quotation->department      = $request->department;
+            $quotation->pr_id           = $request->pr_id;
             $quotation->warehouse_id    = $request->warehouse_id;
             $quotation->payment_terms   = $request->payment_terms;
             $quotation->notes           = $request->notes;
@@ -202,6 +247,31 @@ class QuotationController extends Controller
 
             $quotation->items()->delete();
             $this->createQuotationItems($quotation->id, $request->items);
+
+            // Sync suppliers (Handle both new build 'invited_supplier_ids' and old build 'customer_id')
+            $supplierIds = $request->invited_supplier_ids ?? [];
+            if ($request->customer_id && !in_array($request->customer_id, $supplierIds)) {
+                $supplierIds[] = $request->customer_id;
+            }
+
+            if (!empty($supplierIds)) {
+                // Remove suppliers not in the new list
+                RfqSupplier::where('rfq_id', $quotation->id)
+                    ->whereNotIn('supplier_id', $supplierIds)
+                    ->delete();
+
+                // Add new suppliers
+                foreach ($supplierIds as $supplierId) {
+                    RfqSupplier::firstOrCreate([
+                        'rfq_id'      => $quotation->id,
+                        'supplier_id' => $supplierId,
+                    ], [
+                        'status'      => 'invited',
+                        'creator_id'  => Auth::id(),
+                        'created_by'  => creatorId(),
+                    ]);
+                }
+            }
 
             UpdateQuotation::dispatch($request, $quotation);
 
@@ -258,7 +328,9 @@ class QuotationController extends Controller
         foreach ($items as $itemData) {
             $item                      = new SalesQuotationItem();
             $item->quotation_id        = $quotationId;
-            $item->product_id          = $itemData['product_id'];
+            $productId                 = $itemData['product_id'];
+            $item->product_id          = ($productId == 0) ? null : $productId;
+            $item->description         = $itemData['description'] ?? '';
             $item->quantity            = $itemData['quantity'];
             $item->unit_price          = $itemData['unit_price'];
             $item->discount_percentage = $itemData['discount_percentage'] ?? 0;
@@ -278,65 +350,215 @@ class QuotationController extends Controller
         }
     }
 
-    public function sent(SalesQuotation $quotation)
+    /**
+     * Issue the RFQ to invited suppliers (was: sent).
+     */
+    public function issue(SalesQuotation $quotation)
     {
         if (Auth::user()->can('sent-quotations') && $quotation->created_by == creatorId()) {
             if ($quotation->status !== 'draft') {
-                return back()->with('error', __('Only draft quotations can be sent.'));
+                return back()->with('error', __('Only draft RFQs can be issued.'));
+            }
+            if ($quotation->suppliers()->count() === 0) {
+                return back()->with('error', __('Add at least one invited supplier before issuing the RFQ.'));
             }
             SentSalesQuotation::dispatch($quotation);
+            $quotation->update(['status' => 'issued']);
 
-            $quotation->update(['status' => 'sent']);
-
-            return back()->with('success', __('The quotation has been sent successfully.'));
-        } else {
-            return back()->with('error', __('Permission denied'));
+            return back()->with('success', __('RFQ issued to suppliers.'));
         }
+        return back()->with('error', __('Permission denied'));
     }
 
-    public function approve(SalesQuotation $quotation)
+    // Keep legacy route alias
+    public function sent(SalesQuotation $quotation)
+    {
+        return $this->issue($quotation);
+    }
+
+    /**
+     * Close the RFQ — no more supplier responses accepted.
+     */
+    public function closeRfq(SalesQuotation $quotation)
     {
         if (Auth::user()->can('approve-quotations') && $quotation->created_by == creatorId()) {
-            if ($quotation->status !== 'sent') {
-                return back()->with('error', __('Only sent quotations can be approved.'));
+            if ($quotation->status !== 'issued') {
+                return back()->with('error', __('Only issued RFQs can be closed.'));
             }
-            AcceptSalesQuotation::dispatch($quotation);
+            $quotation->update(['status' => 'closed']);
+            return back()->with('success', __('RFQ closed. No further supplier responses will be accepted.'));
+        }
+        return back()->with('error', __('Permission denied'));
+    }
 
-            $quotation->update(['status' => 'accepted']);
-
-            return back()->with('success', __('The quotation has been approved successfully.'));
-        } else {
+    /**
+     * Add or update an invited supplier on this RFQ.
+     */
+    public function addSupplier(Request $request, SalesQuotation $quotation)
+    {
+        if (!Auth::user()->can('edit-quotations') || $quotation->created_by != creatorId()) {
             return back()->with('error', __('Permission denied'));
         }
+        if (!in_array($quotation->status, ['draft', 'issued'])) {
+            return back()->with('error', __('Cannot add suppliers to a closed or evaluated RFQ.'));
+        }
+
+        $request->validate(['supplier_id' => 'required|exists:users,id']);
+
+        RfqSupplier::firstOrCreate(
+            ['rfq_id' => $quotation->id, 'supplier_id' => $request->supplier_id],
+            ['status' => 'invited', 'creator_id' => Auth::id(), 'created_by' => creatorId()]
+        );
+
+        return back()->with('success', __('Supplier added to RFQ.'));
+    }
+
+    /**
+     * Remove an invited supplier from this RFQ.
+     */
+    public function removeSupplier(SalesQuotation $quotation, RfqSupplier $rfqSupplier)
+    {
+        if (!Auth::user()->can('edit-quotations') || $quotation->created_by != creatorId()) {
+            return back()->with('error', __('Permission denied'));
+        }
+        if ($rfqSupplier->status === 'responded') {
+            return back()->with('error', __('Cannot remove a supplier who has already responded.'));
+        }
+        $rfqSupplier->delete();
+        return back()->with('success', __('Supplier removed from RFQ.'));
+    }
+
+    /**
+     * Record a supplier's quotation response.
+     */
+    public function recordResponse(Request $request, SalesQuotation $quotation, RfqSupplier $rfqSupplier)
+    {
+        if (!Auth::user()->can('edit-quotations') || $quotation->created_by != creatorId()) {
+            return back()->with('error', __('Permission denied'));
+        }
+        if (!in_array($quotation->status, ['issued', 'closed'])) {
+            return back()->with('error', __('Responses can only be recorded when the RFQ is issued or closed.'));
+        }
+
+        $request->validate([
+            'quoted_amount' => 'required|numeric|min:0',
+            'delivery_days' => 'nullable|integer|min:1',
+            'response_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $rfqSupplier->update([
+            'quoted_amount'        => $request->quoted_amount,
+            'delivery_days'        => $request->delivery_days,
+            'response_notes'       => $request->response_notes,
+            'response_received_at' => now(),
+            'status'               => 'responded',
+        ]);
+
+        return back()->with('success', __('Supplier response recorded.'));
+    }
+
+    /**
+     * Start the bid evaluation — creates the evaluation record with default criteria.
+     */
+    public function startEvaluation(SalesQuotation $quotation)
+    {
+        if (!Auth::user()->can('approve-quotations') || $quotation->created_by != creatorId()) {
+            return back()->with('error', __('Permission denied'));
+        }
+        if (!in_array($quotation->status, ['closed', 'under_evaluation'])) {
+            return back()->with('error', __('Close the RFQ before starting evaluation.'));
+        }
+        if ($quotation->evaluation) {
+            return redirect()->route('rfq.evaluation.show', $quotation->id);
+        }
+
+        $evaluation = RfqEvaluation::create([
+            'rfq_id'     => $quotation->id,
+            'status'     => 'draft',
+            'creator_id' => Auth::id(),
+            'created_by' => creatorId(),
+        ]);
+
+        // Default weighted criteria (IPSAS-appropriate)
+        $defaults = [
+            ['criterion_name' => 'Price',                 'weight' => 40.00, 'sort_order' => 1],
+            ['criterion_name' => 'Technical Compliance',  'weight' => 30.00, 'sort_order' => 2],
+            ['criterion_name' => 'Delivery Time',         'weight' => 20.00, 'sort_order' => 3],
+            ['criterion_name' => 'Supplier Reliability',  'weight' => 10.00, 'sort_order' => 4],
+        ];
+
+        foreach ($defaults as $d) {
+            RfqEvaluationCriterion::create(array_merge($d, [
+                'evaluation_id' => $evaluation->id,
+                'creator_id'    => Auth::id(),
+                'created_by'    => creatorId(),
+            ]));
+        }
+
+        $quotation->update(['status' => 'under_evaluation']);
+
+        return redirect()->route('rfq.evaluation.show', $quotation->id)
+                         ->with('success', __('Evaluation started.'));
+    }
+
+    /**
+     * Award the RFQ to the recommended supplier.
+     */
+    public function award(Request $request, SalesQuotation $quotation)
+    {
+        if (!Auth::user()->can('approve-quotations') || $quotation->created_by != creatorId()) {
+            return back()->with('error', __('Permission denied'));
+        }
+        if ($quotation->status !== 'under_evaluation') {
+            return back()->with('error', __('RFQ must be under evaluation before awarding.'));
+        }
+
+        $evaluation = $quotation->evaluation;
+        if (!$evaluation || $evaluation->status !== 'committee_approved') {
+            return back()->with('error', __('The bid evaluation has not been approved by the Tender Committee. Awarding is blocked until committee sign-off is recorded.'));
+        }
+
+        $request->validate(['awarded_supplier_id' => 'required|exists:users,id']);
+
+        $quotation->update([
+            'awarded_supplier_id' => $request->awarded_supplier_id,
+            'status'              => 'awarded',
+        ]);
+
+        AcceptSalesQuotation::dispatch($quotation);
+
+        return back()->with('success', __('RFQ awarded. You may now issue a Local Purchase Order.'));
+    }
+
+    // Legacy alias
+    public function approve(SalesQuotation $quotation)
+    {
+        return back()->with('error', __('Use the Award action after completing the bid evaluation.'));
     }
 
     public function reject(SalesQuotation $quotation)
     {
         if (Auth::user()->can('reject-quotations') && $quotation->created_by == creatorId()) {
-            if ($quotation->status !== 'sent') {
-                return back()->with('error', __('Only sent quotations can be rejected.'));
+            if (!in_array($quotation->status, ['draft', 'issued', 'closed', 'under_evaluation'])) {
+                return back()->with('error', __('This RFQ cannot be cancelled at its current stage.'));
             }
             RejectSalesQuotation::dispatch($quotation);
-
             $quotation->update(['status' => 'rejected']);
-
-            return back()->with('success', __('The quotation has been rejected successfully.'));
-        } else {
-            return back()->with('error', __('Permission denied'));
+            return back()->with('success', __('RFQ cancelled.'));
         }
+        return back()->with('error', __('Permission denied'));
     }
 
     public function print(SalesQuotation $quotation)
     {
         if (Auth::user()->can('print-quotations')) {
-            $quotation->load(['customer', 'customerDetails', 'items.product', 'items.taxes', 'warehouse']);
+            $quotation->load(['suppliers.supplier', 'items.product', 'items.taxes', 'warehouse', 'awardedSupplier']);
 
             return Inertia::render('Quotation/Quotations/Print', [
-                'quotation' => $quotation
+                'quotation' => $quotation,
             ]);
-        } else {
-            return back()->with('error', __('Permission denied'));
         }
+        return back()->with('error', __('Permission denied'));
     }
 
     public function createRevision(SalesQuotation $quotation)

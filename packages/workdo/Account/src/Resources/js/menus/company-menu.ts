@@ -90,6 +90,32 @@ export const accountCompanyMenu = (t: (key: string) => string) => [
                 permission: 'manage-account-reports',
             },
             {
+                title: t('Financial Statements (IPSAS)'),
+                permission: 'manage-account-reports',
+                children: [
+                    {
+                        title: t('Statement of Position'),
+                        href: route('account.reports.index') + '?tab=statement-of-position',
+                        permission: 'view-statement-of-position',
+                    },
+                    {
+                        title: t('Statement of Performance'),
+                        href: route('account.reports.index') + '?tab=statement-of-performance',
+                        permission: 'view-statement-of-performance',
+                    },
+                    {
+                        title: t('Cash Flow Statement'),
+                        href: route('account.reports.index') + '?tab=cash-flow',
+                        permission: 'view-cash-flow',
+                    },
+                    {
+                        title: t('Budget vs Actual'),
+                        href: route('account.reports.index') + '?tab=budget-vs-actual',
+                        permission: 'view-budget-vs-actual',
+                    },
+                ],
+            },
+            {
                 title: t('System Setup'),
                 href: route('account.account-types.index'),
                 permission: 'manage-account-types',

@@ -19,6 +19,8 @@ use App\Events\UpdatePurchaseInvoice;
 use App\Events\DestroyPurchaseInvoice;
 use App\Events\PostPurchaseInvoice;
 use App\Events\EditPurchaseInvoice;
+use Workdo\Procurement\Services\ThreeWayMatchService;
+use Workdo\Quotation\Models\LocalPurchaseOrder;
 
 
 class PurchaseInvoiceController extends Controller
@@ -137,10 +139,18 @@ class PurchaseInvoiceController extends Controller
 
             $warehouses = Warehouse::where('is_active', true)->select('id', 'name', 'address')->where('created_by', creatorId())->get();
 
+            $lpos = module_is_active('Quotation')
+                ? LocalPurchaseOrder::where('created_by', creatorId())
+                    ->whereIn('status', ['approved', 'emailed', 'completed'])
+                    ->select('id', 'lpo_number', 'supplier_id', 'total_amount')
+                    ->get()
+                : collect();
+
             return Inertia::render('Purchase/Create', [
                 'vendors' => $vendors,
                 'products' => $products,
                 'warehouses' => $warehouses,
+                'lpos' => $lpos,
                 'modules' => [
                     'recurringinvoicebill' => module_is_active('RecurringInvoiceBill')
                 ]
@@ -161,6 +171,7 @@ class PurchaseInvoiceController extends Controller
             $invoice->due_date = $request->due_date;
             $invoice->vendor_id = $request->vendor_id;
             $invoice->warehouse_id = $request->warehouse_id;
+            $invoice->lpo_id = $request->lpo_id ?? null;
             $invoice->payment_terms = $request->payment_terms;
             $invoice->notes = $request->notes;
             $invoice->subtotal = $totals['subtotal'];
@@ -198,8 +209,18 @@ class PurchaseInvoiceController extends Controller
 
             $purchaseInvoice->load(['vendor', 'vendorDetails', 'items.product', 'items.taxes', 'warehouse']);
 
+            // Load the latest match log for display in the view
+            $matchLog = null;
+            if ($purchaseInvoice->lpo_id && Module_is_active('Procurement')) {
+                $matchLog = \Workdo\Procurement\Models\ThreeWayMatchLog::where('invoice_id', $purchaseInvoice->id)
+                    ->where('created_by', creatorId())
+                    ->latest()
+                    ->first();
+            }
+
             return Inertia::render('Purchase/View', [
-                'invoice' => $purchaseInvoice
+                'invoice'  => $purchaseInvoice,
+                'matchLog' => $matchLog,
             ]);
         }
         else{
@@ -273,6 +294,7 @@ class PurchaseInvoiceController extends Controller
             $purchaseInvoice->due_date = $request->due_date;
             $purchaseInvoice->vendor_id = $request->vendor_id;
             $purchaseInvoice->warehouse_id = $request->warehouse_id;
+            $purchaseInvoice->lpo_id = $request->lpo_id ?? null;
             $purchaseInvoice->payment_terms = $request->payment_terms;
             $purchaseInvoice->notes = $request->notes;
             $purchaseInvoice->subtotal = $totals['subtotal'];
@@ -367,9 +389,32 @@ class PurchaseInvoiceController extends Controller
 
     public function post(PurchaseInvoice $purchaseInvoice)
     {
-        if(Auth::user()->can('post-purchase-invoices')){
+        if (!Auth::user()->can('post-purchase-invoices')) {
+            return back()->with('error', __('Permission denied'));
+        }
+
         if ($purchaseInvoice->status !== 'draft') {
             return back()->withErrors(['error' => __('Only draft invoices can be posted.')]);
+        }
+
+        // ── Three-way match check ─────────────────────────────────────────────
+        // Required when the invoice is linked to an LPO. A Finance Officer may
+        // override a failed match via the overrideMatch() action.
+        if ($purchaseInvoice->lpo_id && Module_is_active('Procurement')) {
+            $matchService = app(ThreeWayMatchService::class);
+            $result = $matchService->performMatch($purchaseInvoice);
+
+            if ($result['status'] === 'fail') {
+                // Persist match_status; the View page reads the match log from DB
+                $purchaseInvoice->update(['match_status' => 'fail']);
+
+                return redirect()
+                    ->route('purchase-invoices.show', $purchaseInvoice->id)
+                    ->with('error', __('Three-way match failed. Review discrepancies below. A Finance Officer may override if appropriate.'));
+            }
+
+            // Pass or override — record on invoice
+            $purchaseInvoice->update(['match_status' => $result['status']]);
         }
 
         try {
@@ -381,10 +426,38 @@ class PurchaseInvoiceController extends Controller
         $purchaseInvoice->update(['status' => 'posted']);
 
         return back()->with('success', __('The purchase invoice has been posted successfully.'));
+    }
+
+    /**
+     * Finance Officer override of a failed three-way match.
+     * Records the reason and allows the invoice to proceed to posting.
+     */
+    public function overrideMatch(Request $request, PurchaseInvoice $purchaseInvoice)
+    {
+        if (!Auth::user()->can('override-match')) {
+            return back()->with('error', __('Permission denied — only a Finance Officer may override a match failure.'));
         }
-        else{
-            return back()->with('error', __('Permission denied'));
+
+        $request->validate([
+            'override_reason' => 'required|string|min:10|max:1000',
+        ]);
+
+        if ($purchaseInvoice->match_status !== 'fail') {
+            return back()->with('error', __('This invoice does not have a pending match failure to override.'));
         }
+
+        if (Module_is_active('Procurement')) {
+            $matchService = app(ThreeWayMatchService::class);
+            $matchService->recordOverride($purchaseInvoice, $request->override_reason);
+        }
+
+        $purchaseInvoice->update([
+            'match_status'         => 'override',
+            'match_override_reason' => $request->override_reason,
+            'match_override_by'    => Auth::id(),
+        ]);
+
+        return back()->with('success', __('Match override recorded. You may now post the invoice.'));
     }
 
     public function print(PurchaseInvoice $purchaseInvoice)

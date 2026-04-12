@@ -11,6 +11,7 @@ class BudgetMonitoring extends Model
         'budget_id',
         'monitoring_date',
         'total_allocated',
+        'total_committed',
         'total_spent',
         'total_remaining',
         'variance_amount',
@@ -22,11 +23,12 @@ class BudgetMonitoring extends Model
     protected function casts(): array
     {
         return [
-            'monitoring_date' => 'date',
-            'total_allocated' => 'decimal:2',
-            'total_spent' => 'decimal:2',
-            'total_remaining' => 'decimal:2',
-            'variance_amount' => 'decimal:2',
+            'monitoring_date'    => 'date',
+            'total_allocated'    => 'decimal:2',
+            'total_committed'    => 'decimal:2',
+            'total_spent'        => 'decimal:2',
+            'total_remaining'    => 'decimal:2',
+            'variance_amount'    => 'decimal:2',
             'variance_percentage' => 'decimal:2',
         ];
     }

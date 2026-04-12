@@ -46,25 +46,24 @@ class BalanceSheetService
     {
         $code = intval($accountCode);
 
-        // Assets (1000-1999)
+        // Assets (1000-1999) — IPSAS 1 classification
         if ($code >= 1000 && $code <= 1399) {
             return ['section_type' => 'assets', 'sub_section' => 'current_assets'];
-        } elseif ($code >= 1400 && $code <= 1599) {
-            return ['section_type' => 'assets', 'sub_section' => 'other_assets'];
-        } elseif ($code >= 1600 && $code <= 1999) {
-            return ['section_type' => 'assets', 'sub_section' => 'fixed_assets'];
+        } elseif ($code >= 1400 && $code <= 1999) {
+            // Intangibles, long-term investments, PPE — all non-current
+            return ['section_type' => 'assets', 'sub_section' => 'non_current_assets'];
         }
 
-        // Liabilities (2000-2999)
+        // Liabilities (2000-2999) — IPSAS 1 classification
         elseif ($code >= 2000 && $code <= 2499) {
             return ['section_type' => 'liabilities', 'sub_section' => 'current_liabilities'];
         } elseif ($code >= 2500 && $code <= 2999) {
-            return ['section_type' => 'liabilities', 'sub_section' => 'long_term_liabilities'];
+            return ['section_type' => 'liabilities', 'sub_section' => 'non_current_liabilities'];
         }
 
-        // Equity (3000-3999)
+        // Net Assets (3000-3999) — replaces "Equity" per IPSAS 1
         elseif ($code >= 3000 && $code <= 3999) {
-            return ['section_type' => 'equity', 'sub_section' => 'equity'];
+            return ['section_type' => 'net_assets', 'sub_section' => 'net_assets'];
         }
 
         // Revenue (4000-4999) and Expense (5000-5999) - excluded from balance sheet
@@ -74,6 +73,72 @@ class BalanceSheetService
 
         // Default
         return ['section_type' => 'other', 'sub_section' => 'other'];
+    }
+
+    /**
+     * Calculate net assets total for a given as-of date.
+     * Used to supply the prior-year comparative column.
+     */
+    public function getPriorYearGroupedItems($asOfDate)
+    {
+        $accounts = $this->calculateAllAccountBalances($asOfDate);
+
+        $netIncome    = $this->calculateNetIncome($asOfDate);
+        $retainedAcct = $this->getOrCreateRetainedEarningsAccount();
+        $retainedId   = $retainedAcct ? $retainedAcct->id : null;
+
+        $grouped = [];
+
+        foreach ($accounts as $account) {
+            if (abs($account->current_balance) <= 0.01) {
+                continue;
+            }
+            $sectionInfo = $this->getAccountSection($account->account_code);
+            if ($sectionInfo['section_type'] === 'other') {
+                continue;
+            }
+            if ($account->id == $retainedId) {
+                continue; // will add below with net income
+            }
+
+            $sType = $sectionInfo['section_type'];
+            $sub   = $sectionInfo['sub_section'];
+
+            if (!isset($grouped[$sType])) {
+                $grouped[$sType] = [];
+            }
+            if (!isset($grouped[$sType][$sub])) {
+                $grouped[$sType][$sub] = [];
+            }
+
+            $grouped[$sType][$sub][] = [
+                'account_code' => $account->account_code,
+                'account_name' => $account->account_name,
+                'amount'       => $account->current_balance,
+            ];
+        }
+
+        // Add accumulated surplus/retained earnings with net income included
+        if ($retainedAcct) {
+            $retainedBalance = 0;
+            foreach ($accounts as $acc) {
+                if ($acc->id == $retainedAcct->id) {
+                    $retainedBalance = $acc->current_balance;
+                    break;
+                }
+            }
+            $retainedBalance += $netIncome;
+
+            if (abs($retainedBalance) > 0.01) {
+                $grouped['net_assets']['net_assets'][] = [
+                    'account_code' => $retainedAcct->account_code,
+                    'account_name' => $retainedAcct->account_name,
+                    'amount'       => $retainedBalance,
+                ];
+            }
+        }
+
+        return $grouped;
     }
 
     public function generateBalanceSheet($date, $financialYear)
@@ -124,7 +189,7 @@ class BalanceSheetService
                         $totalAssets += $amount;
                     } elseif ($sectionInfo['section_type'] == 'liabilities') {
                         $totalLiabilities += $amount;
-                    } elseif ($sectionInfo['section_type'] == 'equity') {
+                    } elseif ($sectionInfo['section_type'] == 'net_assets' || $sectionInfo['section_type'] == 'equity') {
                         $totalEquity += $amount;
                     }
                 }
@@ -341,7 +406,7 @@ class BalanceSheetService
                 'entry_type' => 'automatic',
                 'reference_type' => 'year_end_close',
                 'reference_id' => null,
-                'description' => 'Year-end closing entries for ' . $financialYear,
+                'description' => 'Year-end closing entries — Surplus/Deficit transferred to Accumulated Surplus/Deficit for ' . $financialYear,
                 'total_debit' => $totalDebits,
                 'total_credit' => $totalCredits,
                 'status' => 'posted',

@@ -82,7 +82,7 @@ export default function YearEndClose({ open, onOpenChange }: YearEndCloseProps) 
                         <h4 className="font-medium text-yellow-900 mb-2">{t('Warning')}</h4>
                         <ul className="text-sm text-yellow-800 space-y-1">
                             <li>• {t('This will close all revenue and expense accounts')}</li>
-                            <li>• {t('Net income will be transferred to retained earnings')}</li>
+                            <li>• {t('Surplus / (Deficit) will be transferred to Accumulated Surplus / (Deficit)')}</li>
                             <li>• {t('Opening balances will be created for next year')}</li>
                             <li>• {t('This action cannot be undone')}</li>
                         </ul>

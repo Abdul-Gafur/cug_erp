@@ -27,11 +27,12 @@ export default function ProductSelector({ products, value, onChange }: Props) {
     };
 
     return (
-        <Select value={value.toString()} onValueChange={handleChange}>
+        <Select value={value?.toString() || '0'} onValueChange={handleChange}>
             <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('Select Product')} />
             </SelectTrigger>
             <SelectContent searchable>
+                <SelectItem value="0">{t('None / Custom Item')}</SelectItem>
                 {products.map((product) => (
                     <SelectItem key={product.id} value={product.id.toString()}>
                         {product.name} - {formatCurrency(product.sale_price || 0)}

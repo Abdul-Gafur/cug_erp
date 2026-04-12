@@ -5,205 +5,256 @@ import html2pdf from 'html2pdf.js';
 import { formatCurrency, formatDate, getCompanySetting } from '@/utils/helpers';
 import { BalanceSheetViewProps } from './types';
 
+const SUB_SECTION_LABELS: Record<string, string> = {
+    current_assets:          'Current Assets',
+    non_current_assets:      'Non-Current Assets',
+    other_assets:            'Non-Current Assets',
+    fixed_assets:            'Non-Current Assets',
+    current_liabilities:     'Current Liabilities',
+    non_current_liabilities: 'Non-Current Liabilities',
+    long_term_liabilities:   'Non-Current Liabilities',
+    net_assets:              'Net Assets',
+    equity:                  'Net Assets',
+};
+
+const normaliseGrouped = (raw: any) => {
+    if (!raw) return null;
+    const out: Record<string, Record<string, any[]>> = {};
+    for (const [sType, subs] of Object.entries(raw as Record<string, any>)) {
+        const normSType = sType === 'equity' ? 'net_assets' : sType;
+        if (!out[normSType]) out[normSType] = {};
+        for (const [sub, items] of Object.entries(subs as Record<string, any[]>)) {
+            const normSub =
+                sub === 'other_assets' || sub === 'fixed_assets' ? 'non_current_assets'
+                : sub === 'long_term_liabilities'                ? 'non_current_liabilities'
+                : sub === 'equity'                               ? 'net_assets'
+                : sub;
+            if (!out[normSType][normSub]) out[normSType][normSub] = [];
+            out[normSType][normSub] = [...out[normSType][normSub], ...(items as any[])];
+        }
+    }
+    return out;
+};
+
+const sectionSum = (sectionData?: Record<string, any[]>): number => {
+    if (!sectionData) return 0;
+    return Object.values(sectionData).flat().reduce((s, i) => s + parseFloat(i.amount ?? '0'), 0);
+};
+
 export default function Print() {
     const { t } = useTranslation();
-    const { balanceSheet, groupedItems } = usePage<BalanceSheetViewProps>().props;
+    const {
+        balanceSheet,
+        groupedItems,
+        priorYearGroupedItems,
+        priorYearTotals,
+        isAudited,
+        priorYear,
+    } = usePage<BalanceSheetViewProps>().props;
+
     const [isDownloading, setIsDownloading] = useState(false);
 
-    // Calculate totals from actual items
-    const totalEquity = groupedItems.equity ? Object.values(groupedItems.equity).flat().reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0) : 0;
-    const totalLiabilities = groupedItems.liabilities ? Object.values(groupedItems.liabilities).flat().reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0) : 0;
-    const totalAssets = groupedItems.assets ? Object.values(groupedItems.assets).flat().reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0) : 0;
+    const normGrouped      = normaliseGrouped(groupedItems)      ?? {};
+    const normPriorGrouped = normaliseGrouped(priorYearGroupedItems);
+
+    const totalAssets    = sectionSum(normGrouped['assets']);
+    const totalLiab      = sectionSum(normGrouped['liabilities']);
+    const totalNetAssets = sectionSum(normGrouped['net_assets']);
+
+    const priorTotalAssets    = sectionSum(normPriorGrouped?.['assets']);
+    const priorTotalLiab      = sectionSum(normPriorGrouped?.['liabilities']);
+    const priorTotalNetAssets = sectionSum(normPriorGrouped?.['net_assets']);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('download') === 'pdf') {
-            downloadPDF();
-        }
+        if (urlParams.get('download') === 'pdf') downloadPDF();
     }, []);
 
     const downloadPDF = async () => {
         setIsDownloading(true);
-
-        const printContent = document.querySelector('.balance-sheet-container');
-        if (printContent) {
+        const el = document.querySelector('.sfp-container');
+        if (el) {
             const opt = {
                 margin: 0.25,
-                filename: `balance-sheet-${formatDate(balanceSheet.balance_sheet_date)}.pdf`,
+                filename: `statement-of-financial-position-${balanceSheet.financial_year}.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
             };
-
             try {
-                await html2pdf().set(opt).from(printContent as HTMLElement).save();
+                await html2pdf().set(opt).from(el as HTMLElement).save();
                 setTimeout(() => window.close(), 1000);
-            } catch (error) {
-                console.error('PDF generation failed:', error);
+            } catch (err) {
+                console.error('PDF generation failed:', err);
             }
         }
-
         setIsDownloading(false);
+    };
+
+    const renderSection = (sType: string, label: string) => {
+        const data = normGrouped[sType];
+        const prior = normPriorGrouped?.[sType];
+        if (!data) return null;
+
+        const total      = sectionSum(data);
+        const priorTotal = sectionSum(prior);
+
+        return (
+            <>
+                <tr>
+                    <td colSpan={normPriorGrouped ? 3 : 2} className="pt-6 pb-1 font-bold text-sm uppercase border-b-2 border-gray-800">
+                        {label}
+                    </td>
+                </tr>
+                {Object.entries(data).map(([sub, items]) => {
+                    const subTotal      = (items as any[]).reduce((s, i) => s + parseFloat(i.amount ?? '0'), 0);
+                    const priorSubItems = (prior?.[sub] ?? []) as any[];
+                    const priorSubTotal = priorSubItems.reduce((s, i) => s + parseFloat(i.amount ?? '0'), 0);
+                    const subLabel      = SUB_SECTION_LABELS[sub] ?? sub.replace(/_/g, ' ');
+
+                    return (
+                        <React.Fragment key={sub}>
+                            <tr>
+                                <td colSpan={normPriorGrouped ? 3 : 2} className="pt-3 pb-1 text-xs font-semibold text-gray-600 uppercase pl-4">
+                                    {subLabel}
+                                </td>
+                            </tr>
+                            {(items as any[]).map((item) => (
+                                <tr key={item.id ?? item.account_code}>
+                                    <td className="py-1 pl-8 text-sm">{item.account?.account_name ?? item.account_name}</td>
+                                    <td className="py-1 text-right text-sm tabular-nums">{formatCurrency(item.amount)}</td>
+                                    {normPriorGrouped && (
+                                        <td className="py-1 text-right text-sm text-gray-500 tabular-nums pl-6">—</td>
+                                    )}
+                                </tr>
+                            ))}
+                            <tr className="border-t border-gray-300">
+                                <td className="py-1 pl-8 text-sm font-semibold">Total {subLabel}</td>
+                                <td className="py-1 text-right text-sm font-semibold tabular-nums">{formatCurrency(subTotal)}</td>
+                                {normPriorGrouped && (
+                                    <td className="py-1 text-right text-sm font-semibold text-gray-500 tabular-nums pl-6">
+                                        {priorSubTotal !== 0 ? formatCurrency(priorSubTotal) : '—'}
+                                    </td>
+                                )}
+                            </tr>
+                        </React.Fragment>
+                    );
+                })}
+                <tr className="border-t-2 border-gray-800">
+                    <td className="py-2 font-bold text-sm">Total {label}</td>
+                    <td className="py-2 text-right font-bold text-sm tabular-nums">{formatCurrency(total)}</td>
+                    {normPriorGrouped && (
+                        <td className="py-2 text-right font-bold text-sm text-gray-600 tabular-nums pl-6">
+                            {priorTotal !== 0 ? formatCurrency(priorTotal) : '—'}
+                        </td>
+                    )}
+                </tr>
+            </>
+        );
     };
 
     return (
         <div className="min-h-screen bg-white">
-            <Head title={t('Balance Sheet')} />
+            <Head title={t('Statement of Financial Position')} />
 
             {isDownloading && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg">
                         <div className="flex items-center space-x-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
                             <p className="text-lg font-semibold text-gray-700">{t('Generating PDF...')}</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="balance-sheet-container bg-white max-w-4xl mx-auto p-12">
-                {/* Header */}
-                <div className="flex justify-between items-start mb-12">
-                    <div>
-                        <h1 className="text-2xl font-bold mb-4">{getCompanySetting('company_name') || 'YOUR COMPANY'}</h1>
-                        <div className="text-sm space-y-1">
-                            {getCompanySetting('company_address') && <p>{getCompanySetting('company_address')}</p>}
-                            {(getCompanySetting('company_city') || getCompanySetting('company_state') || getCompanySetting('company_zipcode')) && (
-                                <p>
-                                    {getCompanySetting('company_city')}{getCompanySetting('company_state') && `, ${getCompanySetting('company_state')}`} {getCompanySetting('company_zipcode')}
+            <div className="sfp-container bg-white max-w-4xl mx-auto p-10">
+                {/* Document Header */}
+                <div className="border-b-2 border-gray-800 pb-6 mb-6">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-2xl font-bold">{getCompanySetting('company_name') || 'INSTITUTION NAME'}</h1>
+                            <div className="text-sm space-y-0.5 mt-1">
+                                {getCompanySetting('company_address') && <p>{getCompanySetting('company_address')}</p>}
+                                {(getCompanySetting('company_city') || getCompanySetting('company_country')) && (
+                                    <p>{getCompanySetting('company_city')}{getCompanySetting('company_country') && `, ${getCompanySetting('company_country')}`}</p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <h2 className="text-xl font-bold">STATEMENT OF FINANCIAL POSITION</h2>
+                            <p className="text-sm mt-1">{t('As of')}: {formatDate(balanceSheet.balance_sheet_date)}</p>
+                            <p className="text-sm">{t('Financial Year')}: {balanceSheet.financial_year}</p>
+                            <p className="text-sm font-medium text-gray-600">Amounts in GHS</p>
+                            {!isAudited && (
+                                <p className="text-sm font-bold text-amber-700 mt-1 border border-amber-400 px-2 py-0.5 inline-block rounded">
+                                    UNAUDITED
                                 </p>
                             )}
-                            {getCompanySetting('company_country') && <p>{getCompanySetting('company_country')}</p>}
-                            {getCompanySetting('company_telephone') && <p>{t('Phone')}: {getCompanySetting('company_telephone')}</p>}
-                            {getCompanySetting('company_email') && <p>{t('Email')}: {getCompanySetting('company_email')}</p>}
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <h2 className="text-2xl font-bold mb-2">{t('BALANCE SHEET')}</h2>
-                        <div className="text-sm space-y-1">
-                            <p>{t('As of')}: {formatDate(balanceSheet.balance_sheet_date)}</p>
-                            <p>{t('Financial Year')}: {balanceSheet.financial_year}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Two Column Layout */}
-                <div className="grid grid-cols-2 gap-8 mb-6">
-                    {/* Left Column - Liabilities & Equity */}
-                    <div>
-                        <h3 className="text-base font-bold border-b-2 border-gray-800 pb-2 mb-3">{t('Liabilities & Equity')}</h3>
-                        
-                        {/* Equity */}
-                        {groupedItems.equity && (
-                            <div className="mb-4">
-                                <h4 className="font-semibold text-sm mb-2">{t('Equity')}</h4>
-                                {Object.entries(groupedItems.equity).map(([subSection, items]) => (
-                                    <div key={subSection}>
-                                        {items.map((item) => (
-                                            <div key={item.id} className="flex justify-between py-1.5 text-sm">
-                                                <span>{item.account?.account_name}</span>
-                                                <span className="tabular-nums">{formatCurrency(item.amount)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
-                                <div className="flex justify-between py-2 font-semibold text-sm border-t mt-2">
-                                    <span>{t('Total Equity')}</span>
-                                    <span className="tabular-nums">{formatCurrency(totalEquity)}</span>
-                                </div>
-                            </div>
-                        )}
+                {/* Column headers when prior year is available */}
+                {normPriorGrouped && (
+                    <div className="flex justify-end gap-0 mb-2 text-xs font-semibold text-gray-600">
+                        <span className="w-40 text-right pr-0">{balanceSheet.financial_year}</span>
+                        <span className="w-40 text-right pl-6">{priorYear}</span>
+                    </div>
+                )}
 
-                        {/* Liabilities */}
-                        {groupedItems.liabilities && (
-                            <div className="mb-4">
-                                <h4 className="font-semibold text-sm mb-2">{t('Liabilities')}</h4>
-                                {Object.entries(groupedItems.liabilities).map(([subSection, items]) => (
-                                    <div key={subSection} className="mb-3">
-                                        <h5 className="font-medium text-xs capitalize mb-1">{subSection.replace('_', ' ')}</h5>
-                                        {items.map((item) => (
-                                            <div key={item.id} className="flex justify-between py-1.5 text-sm ml-3">
-                                                <span>{item.account?.account_name}</span>
-                                                <span className="tabular-nums">{formatCurrency(item.amount)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
-                                <div className="flex justify-between py-2 font-semibold text-sm border-t mt-2">
-                                    <span>{t('Total Liabilities')}</span>
-                                    <span className="tabular-nums">{formatCurrency(totalLiabilities)}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                <table className="w-full border-collapse text-sm">
+                    <tbody>
+                        {renderSection('assets', 'ASSETS')}
+                        {renderSection('liabilities', 'LIABILITIES')}
+                        {renderSection('net_assets', 'NET ASSETS')}
 
-                    {/* Right Column - Assets */}
-                    <div>
-                        <h3 className="text-base font-bold border-b-2 border-gray-800 pb-2 mb-3">{t('Assets')}</h3>
-                        
-                        {groupedItems.assets && (
-                            <div>
-                                {Object.entries(groupedItems.assets).map(([subSection, items]) => (
-                                    <div key={subSection} className="mb-3">
-                                        <h4 className="font-medium text-xs capitalize mb-1">{subSection.replace('_', ' ')}</h4>
-                                        {items.map((item) => (
-                                            <div key={item.id} className="flex justify-between py-1.5 text-sm ml-3">
-                                                <span>{item.account?.account_name}</span>
-                                                <span className="tabular-nums">{formatCurrency(item.amount)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                        {/* Verification row */}
+                        <tr className="border-t-4 border-gray-800 mt-4">
+                            <td className="pt-4 pb-1 font-bold">TOTAL LIABILITIES AND NET ASSETS</td>
+                            <td className="pt-4 pb-1 text-right font-bold tabular-nums">{formatCurrency(totalLiab + totalNetAssets)}</td>
+                            {normPriorGrouped && (
+                                <td className="pt-4 pb-1 text-right font-bold text-gray-600 tabular-nums pl-6">
+                                    {formatCurrency(priorTotalLiab + priorTotalNetAssets)}
+                                </td>
+                            )}
+                        </tr>
+                        <tr className="border-t border-gray-400">
+                            <td className="py-1 font-bold">TOTAL ASSETS</td>
+                            <td className="py-1 text-right font-bold tabular-nums">{formatCurrency(totalAssets)}</td>
+                            {normPriorGrouped && (
+                                <td className="py-1 text-right font-bold text-gray-600 tabular-nums pl-6">
+                                    {formatCurrency(priorTotalAssets)}
+                                </td>
+                            )}
+                        </tr>
+                    </tbody>
+                </table>
 
-                {/* Totals Row */}
-                <div className="grid grid-cols-2 gap-8 border-t-2 border-gray-800 pt-4">
-                    <div className="flex justify-between font-bold text-base">
-                        <span>{t('Total Liabilities & Equity')}</span>
-                        <span className="tabular-nums">{formatCurrency(totalLiabilities + totalEquity)}</span>
+                {/* Notes */}
+                {balanceSheet.notes && balanceSheet.notes.length > 0 && (
+                    <div className="mt-8 pt-4 border-t">
+                        <h3 className="font-bold text-sm mb-3">Notes to the Financial Statements</h3>
+                        {balanceSheet.notes.map((note: any) => (
+                            <div key={note.id} className="mb-3">
+                                <p className="font-semibold text-xs">Note {note.note_number}: {note.note_title}</p>
+                                <p className="text-xs text-gray-700 mt-0.5">{note.note_content}</p>
+                            </div>
+                        ))}
                     </div>
-                    <div className="flex justify-between font-bold text-base">
-                        <span>{t('Total Assets')}</span>
-                        <span className="tabular-nums">{formatCurrency(totalAssets)}</span>
-                    </div>
-                </div>
+                )}
 
                 {/* Footer */}
-                <div className="mt-8 pt-4 border-t text-center text-xs text-gray-600">
-                    <p>{t('Generated on')} {formatDate(new Date().toISOString())}</p>
+                <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500">
+                    <p>Generated on {formatDate(new Date().toISOString())}</p>
                 </div>
             </div>
 
             <style>{`
-                body {
-                    -webkit-print-color-adjust: exact;
-                    color-adjust: exact;
-                    font-family: Arial, sans-serif;
-                }
-
-                @page {
-                    margin: 0.25in;
-                    size: A4;
-                }
-
-                .balance-sheet-container {
-                    max-width: 100%;
-                    margin: 0;
-                    box-shadow: none;
-                }
-
-                @media print {
-                    body {
-                        background: white;
-                    }
-
-                    .balance-sheet-container {
-                        box-shadow: none;
-                    }
-                }
+                body { -webkit-print-color-adjust: exact; color-adjust: exact; font-family: Arial, sans-serif; }
+                @page { margin: 0.25in; size: A4; }
+                .sfp-container { max-width: 100%; margin: 0; box-shadow: none; }
+                @media print { body { background: white; } .sfp-container { box-shadow: none; } }
             `}</style>
         </div>
     );

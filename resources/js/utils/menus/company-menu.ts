@@ -1,4 +1,4 @@
-import { LayoutGrid, Users, Warehouse,ArrowRightLeft, Package, Tag, Tags, Shield, Settings, Image, CreditCard, Headphones, ShoppingCart, Kanban, Calendar, MessageCircle, Replace ,Receipt} from 'lucide-react';
+import { LayoutGrid, Users, Warehouse,ArrowRightLeft, Package, Tag, Tags, Shield, Settings, Image, CreditCard, Headphones, ShoppingCart, Kanban, Calendar, MessageCircle, Replace ,Receipt, ClipboardList, Send, FileCheck, Truck, FileText} from 'lucide-react';
 import { NavItem } from '@/types';
 
 export const getCompanyMenu = (t: (key: string) => string): NavItem[] => [
@@ -24,6 +24,44 @@ export const getCompanyMenu = (t: (key: string) => string): NavItem[] => [
                 title: t('Users'),
                 href: route('users.index'),
                 permission: 'manage-users',
+            },
+        ],
+    },
+    {
+        title: t('Procurement'),
+        icon: ShoppingCart,
+        name: 'procurement',
+        order: 30,
+        children: [
+            {
+                title: t('Suppliers'),
+                href: route('account.vendors.index'),
+                permission: 'manage-vendors',
+            },
+            {
+                title: t('Annual Procurement Plans'),
+                href: route('procurement.plans.index'),
+                permission: 'manage-budget-planner',
+            },
+            {
+                title: t('Purchase Requisitions'),
+                href: route('procurement.requisitions.index'),
+                permission: 'manage-budget-planner',
+            },
+            {
+                title: t('Requests for Quotations / Tenders'),
+                href: route('quotations.index'),
+                permission: 'manage-quotations',
+            },
+            {
+                title: t('Purchase Orders / Contracts'),
+                href: route('lpo.index'),
+                permission: 'manage-quotations',
+            },
+            {
+                title: t('Goods Received Notes'),
+                href: route('procurement.grns.index'),
+                permission: 'manage-budget-planner',
             },
         ],
     },

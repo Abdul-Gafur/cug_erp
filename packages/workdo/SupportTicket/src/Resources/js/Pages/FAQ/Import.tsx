@@ -200,14 +200,14 @@ export default function Import() {
                           <div className="space-y-2">
                             <div className="font-medium">{header}</div>
                             <Select 
-                              value={Object.keys(columnMapping).find(key => columnMapping[key] === index) || ''}
-                              onValueChange={(value) => handleColumnMapping(index, value)}
+                              value={Object.keys(columnMapping).find(key => columnMapping[key] === index) || 'skip'}
+                              onValueChange={(value) => handleColumnMapping(index, value === 'skip' ? '' : value)}
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder={t('Select field')} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">{t('Skip')}</SelectItem>
+                                <SelectItem value="skip">{t('Skip')}</SelectItem>
                                 <SelectItem value="title">{t('Title')}</SelectItem>
                                 <SelectItem value="description">{t('Description')}</SelectItem>
                               </SelectContent>

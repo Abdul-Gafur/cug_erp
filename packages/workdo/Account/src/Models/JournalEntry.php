@@ -19,19 +19,79 @@ class JournalEntry extends Model
         'total_debit',
         'total_credit',
         'status',
+        'fiscal_period_id',
+        'fund_code',
+        'approval_status',
+        'prepared_by',
+        'reviewed_by',
+        'bursar_approved_by',
+        'reversal_of_id',
+        'reversal_entry_id',
         'creator_id',
-        'created_by'
+        'created_by',
     ];
 
     protected $casts = [
         'journal_date' => 'date',
-        'total_debit' => 'decimal:2',
-        'total_credit' => 'decimal:2'
+        'total_debit'  => 'decimal:2',
+        'total_credit' => 'decimal:2',
     ];
 
     public function items(): HasMany
     {
         return $this->hasMany(JournalEntryItem::class);
+    }
+
+    public function fiscalPeriod(): BelongsTo
+    {
+        return $this->belongsTo(FiscalPeriod::class);
+    }
+
+    public function preparedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'prepared_by');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function bursarApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'bursar_approved_by');
+    }
+
+    /** The original entry that this entry reverses. */
+    public function reversalOf(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'reversal_of_id');
+    }
+
+    /** The reversing entry created against this entry. */
+    public function reversalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'reversal_entry_id');
+    }
+
+    public function isPrepared(): bool
+    {
+        return $this->approval_status === 'prepared';
+    }
+
+    public function isUnderReview(): bool
+    {
+        return $this->approval_status === 'under_review';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === 'rejected';
     }
 
     public function isBalanced(): bool

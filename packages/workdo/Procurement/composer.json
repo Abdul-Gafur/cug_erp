@@ -1,0 +1,25 @@
+{
+    "name": "workdo/procurement",
+    "description": "University procurement planning, purchase requisitions, and supplier management (IPSAS P1)",
+    "type": "library",
+    "license": "MIT",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Workdo\\Procurement\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "WorkDo",
+            "email": "support@workdo.io"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Workdo\\Procurement\\Providers\\ProcurementServiceProvider"
+            ]
+        }
+    }
+}

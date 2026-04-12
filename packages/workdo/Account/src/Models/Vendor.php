@@ -14,6 +14,9 @@ class Vendor extends Model
         'user_id',
         'vendor_code',
         'company_name',
+        'registration_number',
+        'tin_number',
+        'supplier_category',
         'contact_person_name',
         'contact_person_email',
         'contact_person_mobile',
@@ -23,10 +26,19 @@ class Vendor extends Model
         'payment_terms',
         'currency_code',
         'credit_limit',
+        'bank_name',
+        'bank_branch',
+        'bank_account_number',
+        'bank_account_name',
+        'performance_rating',
         'billing_address',
         'shipping_address',
         'same_as_billing',
         'is_active',
+        'is_blacklisted',
+        'blacklist_reason',
+        'blacklisted_at',
+        'blacklisted_by',
         'notes',
         'creator_id',
         'created_by',
@@ -35,11 +47,30 @@ class Vendor extends Model
     protected function casts(): array
     {
         return [
-            'billing_address' => 'array',
-            'shipping_address' => 'array',
-            'same_as_billing' => 'boolean',
-            'is_active' => 'boolean',
-            'credit_limit' => 'decimal:2',
+            'billing_address'   => 'array',
+            'shipping_address'  => 'array',
+            'same_as_billing'   => 'boolean',
+            'is_active'         => 'boolean',
+            'is_blacklisted'    => 'boolean',
+            'credit_limit'      => 'decimal:2',
+            'performance_rating'=> 'integer',
+            'blacklisted_at'    => 'datetime',
+        ];
+    }
+
+    /**
+     * University procurement supplier categories.
+     */
+    public static function supplierCategories(): array
+    {
+        return [
+            'academic_laboratory'     => 'Academic & Laboratory Supplies',
+            'it_equipment_services'   => 'IT Equipment & Services',
+            'construction_maintenance'=> 'Construction & Maintenance',
+            'catering_hospitality'    => 'Catering & Hospitality',
+            'professional_services'   => 'Professional Services',
+            'general_supplies'        => 'General Supplies & Services',
+            'books_publications'      => 'Books & Publications',
         ];
     }
 

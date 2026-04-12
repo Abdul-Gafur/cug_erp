@@ -1,15 +1,3 @@
-import { FileCheck } from 'lucide-react';
-
-declare global {
-    function route(name: string): string;
-}
-
-export const quotationCompanyMenu = (t: (key: string) => string) => [
-    {
-        title: t('Quotation'),
-        icon: FileCheck,
-        permission: 'manage-quotations',
-        href: route('quotations.index'),
-        order: 260,
-    },
-];
+// The Procurement / Quotation menu items have been moved to the core resources/js/utils/menus/company-menu.ts for stability.
+export const quotationCompanyMenu = (t: (key: string) => string) => [];
+export const procurementMenu = (t: (key: string) => string) => [];

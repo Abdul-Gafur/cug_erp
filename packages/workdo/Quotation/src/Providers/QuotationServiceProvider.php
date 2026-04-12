@@ -12,10 +12,16 @@ class QuotationServiceProvider extends ServiceProvider
         if (file_exists($routesPath)) {
             $this->loadRoutesFrom($routesPath);
         }
-        
+
         $migrationsPath = __DIR__.'/../Database/Migrations';
         if (is_dir($migrationsPath)) {
             $this->loadMigrationsFrom($migrationsPath);
+        }
+
+        // Register Blade views under the 'quotation::' namespace
+        $viewsPath = __DIR__.'/../Resources/views';
+        if (is_dir($viewsPath)) {
+            $this->loadViewsFrom($viewsPath, 'quotation');
         }
     }
 

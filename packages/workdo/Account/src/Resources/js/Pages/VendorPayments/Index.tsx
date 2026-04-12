@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
-import { Plus, Eye, Trash2, CreditCard, CheckCircle, X } from "lucide-react";
+import { Plus, Eye, Trash2, CreditCard, CheckCircle, X, FileText } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FilterButton } from '@/components/ui/filter-button';
 import { Pagination } from "@/components/ui/pagination";
@@ -26,6 +26,7 @@ import { VendorPayment, VendorPaymentsIndexProps, VendorPaymentModalState } from
 interface VendorPaymentFilters {
     vendor_id: string;
     status: string;
+    approval_stage: string;
     search: string;
     date_range: string;
     bank_account_id: string;
@@ -40,6 +41,7 @@ export default function Index() {
     const [filters, setFilters] = useState<VendorPaymentFilters>({
         vendor_id: initialFilters?.vendor_id || '',
         status: initialFilters?.status || '',
+        approval_stage: initialFilters?.approval_stage || '',
         search: initialFilters?.search || '',
         date_range: (() => {
             const fromDate = urlParams.get('date_from');
@@ -117,6 +119,7 @@ export default function Index() {
         setFilters({
             vendor_id: '',
             status: '',
+            approval_stage: '',
             search: '',
             date_range: '',
             bank_account_id: ''
@@ -172,14 +175,28 @@ export default function Index() {
             key: 'status',
             header: t('Status'),
             sortable: true,
-            render: (value: string) => (
-                <span className={`px-2 py-1 rounded-full text-sm ${
-                    value === 'cleared' ? 'bg-green-100 text-green-800' :
-                    value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                }`}>
-                    {t(value)}
-                </span>
+            render: (value: string, payment: VendorPayment) => (
+                <div className="flex flex-col gap-1">
+                    <span className={`px-2 py-1 rounded-full text-xs inline-block ${
+                        value === 'cleared' ? 'bg-green-100 text-green-800' :
+                        value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                    }`}>{t(value)}</span>
+                    {payment.approval_stage && payment.approval_stage !== 'pending' && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs inline-block ${
+                            payment.approval_stage === 'cfo_approved' ? 'bg-purple-100 text-purple-800' :
+                            payment.approval_stage === 'finance_approved' ? 'bg-blue-100 text-blue-800' :
+                            'bg-orange-100 text-orange-800'
+                        }`}>
+                            {payment.approval_stage === 'cfo_approved' ? '✓ CFO Approved' :
+                             payment.approval_stage === 'finance_approved' ? 'Finance Approved' :
+                             'HoD Approved'}
+                        </span>
+                    )}
+                    {payment.pv_number && (
+                        <span className="text-xs text-purple-600 font-mono">{payment.pv_number}</span>
+                    )}
+                </div>
             )
         },
         ...(auth.user?.permissions?.some((p: string) => ['view-vendor-payments', 'delete-vendor-payments','cleared-vendor-payments'].includes(p)) ? [{
@@ -234,6 +251,23 @@ export default function Index() {
                                 </TooltipContent>
                             </Tooltip>
                         )}
+                        {payment.status === 'cleared' || payment.approval_stage === 'cfo_approved' ? (
+                            <Tooltip delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.open(route('account.vendor-payments.print-voucher', payment.id), '_blank')}
+                                        className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t('Payment Voucher')} {payment.pv_number ? `(${payment.pv_number})` : ''}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ) : null}
                         {auth.user?.permissions?.includes('delete-vendor-payments') && payment.status === 'pending' && (
                             <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>

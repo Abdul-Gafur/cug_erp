@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified', 'PlanModuleCheck'])->group(function () {
     // purchase invoices
     Route::resource('purchase-invoices', PurchaseInvoiceController::class);
     Route::post('purchase-invoices/{purchaseInvoice}/post', [PurchaseInvoiceController::class, 'post'])->name('purchase-invoices.post');
+    Route::post('purchase-invoices/{purchaseInvoice}/override-match', [PurchaseInvoiceController::class, 'overrideMatch'])->name('purchase-invoices.override-match');
     Route::get('purchase-invoices/{purchaseInvoice}/print', [PurchaseInvoiceController::class, 'print'])->name('purchase-invoices.print');
 
     // sales invoices

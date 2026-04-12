@@ -72,6 +72,13 @@ class PermissionTableSeeder extends Seeder
             ['name' => 'create-vendor-payments', 'module' => 'vendor-payments', 'label' => 'Create Vendor Payments'],
             ['name' => 'cleared-vendor-payments', 'module' => 'vendor-payments', 'label' => 'Cleared Vendor Payments'],
             ['name' => 'delete-vendor-payments', 'module' => 'vendor-payments', 'label' => 'Delete Vendor Payments'],
+            // Invoice Submission & Verification (Steps 1 & 2)
+            ['name' => 'submit-vendor-invoice', 'module' => 'vendor-payments', 'label' => 'Submit Vendor Invoice'],
+            ['name' => 'verify-vendor-invoice', 'module' => 'vendor-payments', 'label' => 'Verify Vendor Invoice (3-Way Match)'],
+            // 3-Stage Approval (Step 3)
+            ['name' => 'hod-approve-vendor-payments', 'module' => 'vendor-payments', 'label' => 'HoD Approve Vendor Payments'],
+            ['name' => 'finance-approve-vendor-payments', 'module' => 'vendor-payments', 'label' => 'Finance Officer Approve Vendor Payments'],
+            ['name' => 'cfo-approve-vendor-payments', 'module' => 'vendor-payments', 'label' => 'CFO Approve Vendor Payments'],
 
             // CustomerPayment management
             ['name' => 'manage-customer-payments', 'module' => 'customer-payments', 'label' => 'Manage Customer Payments'],
@@ -168,6 +175,15 @@ class PermissionTableSeeder extends Seeder
             ['name' => 'print-customer-detail-report', 'module' => 'account-reports', 'label' => 'Print Customer Detail Report'],
             ['name' => 'view-vendor-detail-report', 'module' => 'account-reports', 'label' => 'View Vendor Detail Report'],
             ['name' => 'print-vendor-detail-report', 'module' => 'account-reports', 'label' => 'Print Vendor Detail Report'],
+            // IPSAS Financial Statements
+            ['name' => 'view-statement-of-position', 'module' => 'account-reports', 'label' => 'View Statement of Financial Position'],
+            ['name' => 'print-statement-of-position', 'module' => 'account-reports', 'label' => 'Print Statement of Financial Position'],
+            ['name' => 'view-statement-of-performance', 'module' => 'account-reports', 'label' => 'View Statement of Financial Performance'],
+            ['name' => 'print-statement-of-performance', 'module' => 'account-reports', 'label' => 'Print Statement of Financial Performance'],
+            ['name' => 'view-cash-flow', 'module' => 'account-reports', 'label' => 'View Cash Flow Statement'],
+            ['name' => 'print-cash-flow', 'module' => 'account-reports', 'label' => 'Print Cash Flow Statement'],
+            ['name' => 'view-budget-vs-actual', 'module' => 'account-reports', 'label' => 'View Budget vs Actual Report'],
+            ['name' => 'print-budget-vs-actual', 'module' => 'account-reports', 'label' => 'Print Budget vs Actual Report'],
         ];
 
         $company_role = Role::where('name', 'company')->first();

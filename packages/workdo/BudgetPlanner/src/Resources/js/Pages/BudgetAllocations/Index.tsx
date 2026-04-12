@@ -22,29 +22,48 @@ import Edit from './Edit';
 
 interface BudgetAllocation {
     id: number;
-    budget?: { budget_name: string; };
-    account?: { account_name: string; };
+    budget?: { budget_name: string; vote_cost_centre?: { code: string; }; };
+    account?: { account_name: string; account_code: string; };
+    economic_classification: string;
     allocated_amount: number;
+    committed_amount: number;
     spent_amount: number;
     remaining_amount: number;
 }
 
+const ECON_LABELS: Record<string, string> = {
+    personnel_emoluments: 'Personnel Emoluments',
+    goods_services:       'Goods & Services',
+    capital_expenditure:  'Capital Expenditure',
+    transfers_grants:     'Transfers & Grants',
+};
+
 export default function Index() {
     const { t } = useTranslation();
-    const { budgetAllocations, budgets, accounts, auth } = usePage<any>().props;
+    const { props } = usePage<any>();
+    const budgetAllocations = props.budgetAllocations || { data: [] };
+    const budgets = props.budgets || [];
+    const accounts = props.accounts || [];
+    const auth = props.auth || { user: { permissions: [] } };
+    
     const urlParams = new URLSearchParams(window.location.search);
 
     const [filters, setFilters] = useState({
         search: urlParams.get('search') || '',
         budget_id: urlParams.get('budget_id') || '',
         account_id: urlParams.get('account_id') || '',
+        economic_classification: urlParams.get('economic_classification') || '',
     });
 
     const [perPage] = useState(urlParams.get('per_page') || '10');
     const [sortField, setSortField] = useState(urlParams.get('sort') || '');
     const [sortDirection, setSortDirection] = useState(urlParams.get('direction') || 'asc');
     const [showFilters, setShowFilters] = useState(false);
-    const [modalState, setModalState] = useState({
+    const [modalState, setModalState] = useState<{
+        isOpen: boolean;
+        mode: 'add' | 'edit' | '';
+        data: BudgetAllocation | null;
+    }>({
         isOpen: false,
         mode: '',
         data: null
@@ -78,6 +97,7 @@ export default function Index() {
             search: '',
             budget_id: '',
             account_id: '',
+            economic_classification: '',
         });
         router.get(route('budget-planner.budget-allocations.index'), {per_page: perPage});
     };
@@ -95,31 +115,47 @@ export default function Index() {
             key: 'budget',
             header: t('Budget'),
             sortable: false,
-            render: (value: any, row: BudgetAllocation) => row.budget?.budget_name || '-'
+            render: (_: any, row: BudgetAllocation) => row.budget?.budget_name || '-'
         },
         {
             key: 'account',
             header: t('Account'),
             sortable: false,
-            render: (value: any, row: BudgetAllocation) => row.account?.account_name || '-'
+            render: (_: any, row: BudgetAllocation) =>
+                row.account ? `${row.account.account_code} — ${row.account.account_name}` : '-'
+        },
+        {
+            key: 'economic_classification',
+            header: t('Economic Classification'),
+            sortable: false,
+            render: (v: string) => ECON_LABELS[v] ?? v ?? '-'
         },
         {
             key: 'allocated_amount',
-            header: t('Allocated Amount'),
+            header: t('Allocated'),
             sortable: false,
-            render: (value: number) => formatCurrency(value)
+            render: (v: number) => formatCurrency(v)
+        },
+        {
+            key: 'committed_amount',
+            header: t('Committed'),
+            sortable: false,
+            render: (v: number) => <span className="text-amber-700">{formatCurrency(v)}</span>
         },
         {
             key: 'spent_amount',
-            header: t('Spent Amount'),
+            header: t('Spent'),
             sortable: false,
-            render: (value: number) => formatCurrency(value)
+            render: (v: number) => formatCurrency(v)
         },
         {
             key: 'remaining_amount',
-            header: t('Remaining Amount'),
+            header: t('Remaining'),
             sortable: false,
-            render: (value: number) => formatCurrency(value)
+            render: (_: any, row: BudgetAllocation) => {
+                const available = (row.allocated_amount || 0) - (row.committed_amount || 0) - (row.spent_amount || 0);
+                return <span className={available < 0 ? 'text-red-600 font-medium' : 'text-green-700'}>{formatCurrency(available)}</span>;
+            }
         },
         {
             key: 'actions',
@@ -217,7 +253,7 @@ export default function Index() {
                                     onToggle={() => setShowFilters(!showFilters)}
                                 />
                                 {(() => {
-                                    const activeFilters = [filters.budget_id, filters.account_id].filter(f => f !== '' && f !== null && f !== undefined).length;
+                                    const activeFilters = [filters.budget_id, filters.account_id, filters.economic_classification].filter(f => f !== '' && f !== null && f !== undefined).length;
                                     return activeFilters > 0 && (
                                         <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                                             {activeFilters}
@@ -263,6 +299,20 @@ export default function Index() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('Economic Classification')}</label>
+                                <Select value={filters.economic_classification} onValueChange={(value) => setFilters({...filters, economic_classification: value})}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t('Filter by Classification')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="personnel_emoluments">{t('Personnel Emoluments')}</SelectItem>
+                                        <SelectItem value="goods_services">{t('Goods & Services')}</SelectItem>
+                                        <SelectItem value="capital_expenditure">{t('Capital Expenditure')}</SelectItem>
+                                        <SelectItem value="transfers_grants">{t('Transfers & Grants')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="flex items-end gap-2">
                                 <Button onClick={handleFilter} size="sm">{t('Apply')}</Button>
                                 <Button variant="outline" onClick={clearFilters} size="sm">{t('Clear')}</Button>
@@ -287,7 +337,7 @@ export default function Index() {
                                         icon={DollarSign}
                                         title={t('No Budget Allocations found')}
                                         description={t('Get started by creating your first Budget Allocation.')}
-                                        hasFilters={!!(filters.search || filters.budget_id || filters.account_id)}
+                                        hasFilters={!!(filters.search || filters.budget_id || filters.account_id || filters.economic_classification)}
                                         onClearFilters={clearFilters}
                                         createPermission="create-budget-allocations"
                                         onCreateClick={() => openModal('add')}

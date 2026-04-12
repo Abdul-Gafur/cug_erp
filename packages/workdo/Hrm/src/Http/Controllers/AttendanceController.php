@@ -373,6 +373,27 @@ class AttendanceController extends Controller
                 }
             }
 
+            // Check Geofence restriction
+            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on') {
+                $compLat = $setting['company_latitude'] ?? '';
+                $compLon = $setting['company_longitude'] ?? '';
+                $compRadius = $setting['company_radius'] ?? 100;
+
+                if (!empty($compLat) && !empty($compLon)) {
+                    $userLat = request('latitude');
+                    $userLon = request('longitude');
+
+                    if (!$userLat || !$userLon) {
+                        return redirect()->back()->with('error', __('Please enable location services to clock in.'));
+                    }
+
+                    $distance = $this->calculateDistance($compLat, $compLon, $userLat, $userLon);
+                    if ($distance > $compRadius) {
+                        return redirect()->back()->with('error', __('You are outside the allowed office area.'));
+                    }
+                }
+            }
+
             $today = now()->toDateString();
             $employeeId = Auth::id();
 
@@ -472,6 +493,27 @@ class AttendanceController extends Controller
                 }
             }
 
+            // Check Geofence restriction
+            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on') {
+                $compLat = $setting['company_latitude'] ?? '';
+                $compLon = $setting['company_longitude'] ?? '';
+                $compRadius = $setting['company_radius'] ?? 100;
+
+                if (!empty($compLat) && !empty($compLon)) {
+                    $userLat = request('latitude');
+                    $userLon = request('longitude');
+
+                    if (!$userLat || !$userLon) {
+                        return redirect()->back()->with('error', __('Please enable location services to clock out.'));
+                    }
+
+                    $distance = $this->calculateDistance($compLat, $compLon, $userLat, $userLon);
+                    if ($distance > $compRadius) {
+                        return redirect()->back()->with('error', __('You are outside the allowed office area.'));
+                    }
+                }
+            }
+
             $today = now()->toDateString();
             $employeeId = Auth::id();
 
@@ -557,5 +599,15 @@ class AttendanceController extends Controller
         return User::emp()->where('created_by', creatorId())
             ->whereIn('id', $employeeQuery->pluck('user_id'))
             ->select('id', 'name')->get();
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // in meters
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
     }
 }

@@ -23,6 +23,7 @@ export default function QuotationItemsTable({ items, onChange, errors, products 
     const addItem = () => {
         const newItem: QuotationItem = {
             product_id: 0,
+            description: '',
             quantity: 1,
             unit_price: 0,
             discount_percentage: 0,
@@ -78,6 +79,7 @@ export default function QuotationItemsTable({ items, onChange, errors, products 
         newItems[index] = {
             ...newItems[index],
             product_id: productId,
+            description: newItems[index].description || product?.name || '',
             unit_price: Number(product?.sale_price) || 0,
             tax_percentage: Number(totalTaxRate) || 0,
             taxes: taxes
@@ -108,7 +110,10 @@ export default function QuotationItemsTable({ items, onChange, errors, products 
                     <thead>
                         <tr className="border-b border-border">
                             <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                                {t('Product')} <span className="text-red-500">*</span>
+                                {t('Item Description')} <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                {t('Product (Optional)')}
                             </th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
                                 {t('Qty')} <span className="text-red-500">*</span>
@@ -133,7 +138,17 @@ export default function QuotationItemsTable({ items, onChange, errors, products 
                     <tbody className="divide-y divide-border">
                         {items.map((item, index) => (
                             <tr key={index}>
-                                <td className="px-4 py-4">
+                                <td className="px-4 py-4 min-w-[300px]">
+                                    <Input
+                                        placeholder={t('Enter item description / service details...')}
+                                        value={item.description || ''}
+                                        onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                        className="text-sm"
+                                        required
+                                    />
+                                    <InputError message={errors[`items.${index}.description`]} />
+                                </td>
+                                <td className="px-4 py-4 min-w-[200px]">
                                     <ProductSelector
                                         products={products}
                                         value={item.product_id}

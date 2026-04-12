@@ -5,6 +5,7 @@ namespace Workdo\Account\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Workdo\Account\Models\AccountType;
 
 class ChartOfAccount extends Model
@@ -23,6 +24,8 @@ class ChartOfAccount extends Model
         'description',
         'account_type_id',
         'parent_account_id',
+        'fund_id',
+        'economic_classification',
         'creator_id',
         'created_by',
     ];
@@ -55,5 +58,10 @@ class ChartOfAccount extends Model
     public function journalEntryItems(): HasMany
     {
         return $this->hasMany(JournalEntryItem::class, 'account_id');
+    }
+
+    public function fund(): BelongsTo
+    {
+        return $this->belongsTo(UniversityFund::class, 'fund_id');
     }
 }

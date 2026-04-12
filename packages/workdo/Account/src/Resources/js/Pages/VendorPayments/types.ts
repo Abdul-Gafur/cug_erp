@@ -38,19 +38,59 @@ export interface VendorPaymentAllocation {
     invoice: PurchaseInvoice;
 }
 
+export interface InvoiceSubmission {
+    id: number;
+    invoice_number: string;
+    invoice_date: string;
+    po_reference?: string;
+    delivery_note_number?: string;
+    submission_date: string;
+    supplier_type: 'resident' | 'non_resident';
+    goods_or_services: 'goods' | 'services';
+    base_amount: number;
+    nhil_amount: number;
+    getfund_amount: number;
+    chrl_amount: number;
+    vat_base_amount: number;
+    vat_amount: number;
+    gross_amount: number;
+    wht_rate: number;
+    wht_amount: number;
+    net_payable: number;
+    verification_status: 'pending' | 'verified' | 'rejected';
+    three_way_match_status: 'not_checked' | 'matched' | 'discrepancy';
+    match_notes?: string;
+    rejection_reason?: string;
+    submitted_by?: { id: number; name: string };
+    verified_by?: { id: number; name: string };
+    verified_at?: string;
+}
+
 export interface VendorPayment {
     id: number;
     payment_number: string;
+    pv_number?: string;
     payment_date: string;
     vendor_id: number;
     bank_account_id: number;
     reference_number?: string;
+    payment_method?: 'bank_transfer' | 'cheque' | 'electronic';
+    cheque_number?: string;
+    narration?: string;
     payment_amount: number;
     status: 'pending' | 'cleared' | 'cancelled';
+    approval_stage: 'pending' | 'hod_approved' | 'finance_approved' | 'cfo_approved';
+    hod_approved_by?: { id: number; name: string };
+    hod_approved_at?: string;
+    finance_approved_by?: { id: number; name: string };
+    finance_approved_at?: string;
+    cfo_approved_by?: { id: number; name: string };
+    cfo_approved_at?: string;
     notes?: string;
     vendor: Vendor;
     bank_account: BankAccount;
     allocations: VendorPaymentAllocation[];
+    invoice_submission?: InvoiceSubmission;
     created_at: string;
 }
 
@@ -59,6 +99,9 @@ export interface CreateVendorPaymentFormData {
     vendor_id: string;
     bank_account_id: string;
     reference_number: string;
+    payment_method: string;
+    cheque_number: string;
+    narration: string;
     payment_amount: string;
     notes: string;
     allocations: {
@@ -74,7 +117,9 @@ export interface CreateVendorPaymentFormData {
 export interface VendorPaymentFilters {
     vendor_id: string;
     status: string;
+    approval_stage: string;
     search: string;
+    bank_account_id: string;
 }
 
 export type PaginatedVendorPayments = PaginatedData<VendorPayment>;

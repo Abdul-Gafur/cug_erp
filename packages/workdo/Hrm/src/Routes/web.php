@@ -1,6 +1,7 @@
 <?php
 
 use Workdo\Hrm\Http\Controllers\IpRestrictController;
+use Workdo\Hrm\Http\Controllers\AttendanceSettingController;
 
 use Workdo\Hrm\Http\Controllers\PayrollController;
 
@@ -442,5 +443,10 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Hrm'])->group(fun
         Route::put('/{iprestrict}', [IpRestrictController::class, 'update'])->name('update');
         Route::delete('/{iprestrict}', [IpRestrictController::class, 'destroy'])->name('destroy');
         Route::post('/toggle-setting', [IpRestrictController::class, 'toggleSetting'])->name('toggle-setting');
+    });
+
+    Route::prefix('hrm/attendance-settings')->name('hrm.attendance-settings.')->group(function () {
+        Route::get('/', [AttendanceSettingController::class, 'index'])->name('index');
+        Route::post('/', [AttendanceSettingController::class, 'store'])->name('store');
     });
 });

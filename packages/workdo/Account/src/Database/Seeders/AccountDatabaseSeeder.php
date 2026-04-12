@@ -12,6 +12,8 @@ use Workdo\Account\Models\Expense;
 use Workdo\Account\Models\ExpenseCategories;
 use Workdo\Account\Models\Revenue;
 use Workdo\Account\Models\RevenueCategories;
+use Workdo\Account\Models\FixedAsset;
+use Workdo\Account\Models\JournalEntry;
 use Workdo\Account\Models\Vendor;
 
 class AccountDatabaseSeeder extends Seeder
@@ -52,6 +54,12 @@ class AccountDatabaseSeeder extends Seeder
                 }
                 if(Expense::where('created_by', $userId)->doesntExist()) {
                     (new DemoExpenseSeeder())->run($userId);
+                }
+                if(JournalEntry::where('created_by', $userId)->doesntExist()) {
+                    (new DemoJournalEntrySeeder())->run($userId);
+                }
+                if(FixedAsset::where('created_by', $userId)->doesntExist()) {
+                    (new DemoFixedAssetSeeder())->run($userId);
                 }
             }
         }

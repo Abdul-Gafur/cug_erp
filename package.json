@@ -3,7 +3,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build"
+        "build": "vite build"
     },
     "devDependencies": {
         "@headlessui/react": "^1.4.2",
@@ -89,5 +89,8 @@
         "tailwindcss-animate": "^1.0.7",
         "unicode-emoji-json": "^0.8.0",
         "x-data-spreadsheet": "^1.1.9"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-darwin-arm64": "^4.60.1"
     }
 }

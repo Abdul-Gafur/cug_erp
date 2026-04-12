@@ -144,7 +144,7 @@ export default function Index() {
                 };
                 return (
                     <span className={`px-2 py-1 rounded-full text-sm ${statusColors[value as keyof typeof statusColors]}`}>
-                        {t(value.charAt(0).toUpperCase() + value.slice(1))}
+                        {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : '—'}
                     </span>
                 );
             }
@@ -382,7 +382,7 @@ export default function Index() {
                                                             resignation.status === 'rejected' ? 'bg-red-100 text-red-800' :
                                                             'bg-gray-100 text-gray-800'
                                                         }`}>
-                                                            {t(resignation.status?.charAt(0).toUpperCase() + resignation.status?.slice(1) || 'Unknown')}
+                                                            {resignation.status ? t(resignation.status.charAt(0).toUpperCase() + resignation.status.slice(1)) : t('Unknown')}
                                                         </span>
                                                     </div>
                                                 </div>

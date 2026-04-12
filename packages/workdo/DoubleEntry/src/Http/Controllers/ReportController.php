@@ -231,36 +231,68 @@ class ReportController extends Controller
 
     public function cashFlow(Request $request)
     {
-        $currentYear = date('Y');
-        $fromDate = $request->from_date ?: "$currentYear-01-01";
-        $toDate = $request->to_date ?: "$currentYear-12-31";
+        [$fromDate, $toDate, $financialYear] = $this->resolveCashFlowDates($request);
 
-        $data = $this->reportService->getCashFlow([
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-        ]);
+        $data      = $this->reportService->getCashFlow(['from_date' => $fromDate, 'to_date' => $toDate]);
+        $isAudited = $this->isFiscalYearAudited($financialYear);
 
-        return response()->json($data);
+        // Prior-year comparative
+        $priorFrom = date('Y-m-d', strtotime($fromDate . ' -1 year'));
+        $priorTo   = date('Y-m-d', strtotime($toDate   . ' -1 year'));
+        $priorData = $this->reportService->getCashFlow(['from_date' => $priorFrom, 'to_date' => $priorTo]);
+
+        return response()->json(array_merge($data, [
+            'financial_year' => $financialYear,
+            'is_audited'     => $isAudited,
+            'prior_year'     => $priorData,
+        ]));
     }
 
     public function printCashFlow(Request $request)
     {
-        $currentYear = date('Y');
-        $fromDate = $request->from_date ?: "$currentYear-01-01";
-        $toDate = $request->to_date ?: "$currentYear-12-31";
+        [$fromDate, $toDate, $financialYear] = $this->resolveCashFlowDates($request);
 
-        $data = $this->reportService->getCashFlow([
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-        ]);
+        $data      = $this->reportService->getCashFlow(['from_date' => $fromDate, 'to_date' => $toDate]);
+        $isAudited = $this->isFiscalYearAudited($financialYear);
+
+        $priorFrom = date('Y-m-d', strtotime($fromDate . ' -1 year'));
+        $priorTo   = date('Y-m-d', strtotime($toDate   . ' -1 year'));
+        $priorData = $this->reportService->getCashFlow(['from_date' => $priorFrom, 'to_date' => $priorTo]);
 
         return Inertia::render('DoubleEntry/Reports/Print/CashFlow', [
-            'data' => $data,
-            'filters' => [
-                'from_date' => $fromDate,
-                'to_date' => $toDate,
+            'data'     => $data,
+            'priorData'=> $priorData,
+            'filters'  => [
+                'from_date'      => $fromDate,
+                'to_date'        => $toDate,
+                'financial_year' => $financialYear,
             ],
+            'isAudited' => $isAudited,
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cash-flow date helpers
+    // -------------------------------------------------------------------------
+
+    private function resolveCashFlowDates(Request $request): array
+    {
+        if ($request->filled('financial_year')) {
+            $year = $request->financial_year;
+            return ["$year-01-01", "$year-12-31", $year];
+        }
+        $currentYear = date('Y');
+        $fromDate    = $request->from_date ?: "$currentYear-01-01";
+        $toDate      = $request->to_date   ?: "$currentYear-12-31";
+        return [$fromDate, $toDate, date('Y', strtotime($toDate))];
+    }
+
+    private function isFiscalYearAudited(string $financialYear): bool
+    {
+        return \Workdo\DoubleEntry\Models\BalanceSheet::where('created_by', creatorId())
+            ->where('financial_year', $financialYear)
+            ->where('status', 'finalized')
+            ->exists();
     }
 
     public function expenseReport(Request $request)

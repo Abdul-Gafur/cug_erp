@@ -5,6 +5,7 @@ namespace Workdo\Account\Services;
 use Workdo\Account\Models\JournalEntry;
 use Workdo\Account\Models\JournalEntryItem;
 use Workdo\Account\Models\ChartOfAccount;
+use Workdo\Account\Models\FiscalPeriod;
 use Illuminate\Support\Facades\Auth;
 use Workdo\Account\Events\UpdateBudgetSpending;
 use Workdo\Account\Models\BankAccount;
@@ -36,6 +37,40 @@ class JournalService
     }
 
     /**
+     * IPSAS period-lock guard.
+     * Throws if the entry date falls in a closed fiscal period.
+     * Passes silently when no fiscal years are configured (new tenant without periods).
+     */
+    private function assertPeriodOpen(string $date): void
+    {
+        $period = FiscalPeriod::where('start_date', '<=', $date)
+            ->where('end_date', '>=', $date)
+            ->whereHas('fiscalYear', fn ($q) => $q->where('created_by', creatorId()))
+            ->first();
+
+        if ($period && $period->isClosed()) {
+            throw new \Exception(
+                "Financial Period '{$period->period_name}' is closed. " .
+                "Posting to a closed period is not permitted. " .
+                "Use a reversing entry in an open period to correct this transaction."
+            );
+        }
+    }
+
+    /**
+     * Returns the fiscal_period_id for a given entry date, or null if no periods exist.
+     */
+    private function resolveFiscalPeriodId(string $date): ?int
+    {
+        $period = FiscalPeriod::where('start_date', '<=', $date)
+            ->where('end_date', '>=', $date)
+            ->whereHas('fiscalYear', fn ($q) => $q->where('created_by', creatorId()))
+            ->first();
+
+        return $period?->id;
+    }
+
+    /**
      * Creates journal entry for sales invoice: Dr: A/R, Cr: Sales Revenue + Tax
      * Usage: SalesInvoiceController->store() after creating invoice
      */
@@ -52,21 +87,27 @@ class JournalService
         $totalCredit = $salesInvoice->subtotal - $salesInvoice->discount_amount + ($salesInvoice->tax_amount ?? 0);
         $this->validateBalance($totalDebit, $totalCredit);
 
+        $entryDate = $salesInvoice->invoice_date ?? now()->toDateString();
+        $this->assertPeriodOpen($entryDate);
+
         $arAccount = ChartOfAccount::where('account_code', '1100')->where('created_by', creatorId())->first();
         $salesAccount = ChartOfAccount::where('account_code', '4100')->where('created_by', creatorId())->first();
         $taxAccount = ChartOfAccount::where('account_code', '2210')->where('created_by', creatorId())->first();
 
         $journalEntry = JournalEntry::create([
-            'journal_date' => $salesInvoice->invoice_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'sales_invoice',
-            'reference_id' => $salesInvoice->id,
-            'description' => 'Sales Invoice #' . $salesInvoice->invoice_number,
-            'total_debit' => $salesInvoice->total_amount,
-            'total_credit' => $salesInvoice->total_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $entryDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'sales_invoice',
+            'reference_id'      => $salesInvoice->id,
+            'description'       => 'Sales Invoice #' . $salesInvoice->invoice_number,
+            'total_debit'       => $salesInvoice->total_amount,
+            'total_credit'      => $salesInvoice->total_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($entryDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Accounts Receivable
@@ -129,17 +170,23 @@ class JournalService
         $customerDepositsAccount = ChartOfAccount::where('account_code', '2350')->where('created_by', creatorId())->first();
         $arAccount = ChartOfAccount::where('account_code', '1100')->where('created_by', creatorId())->first();
 
+        $retainerDate = now()->toDateString();
+        $this->assertPeriodOpen($retainerDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'retainer_to_invoice',
-            'reference_id' => $retainer->id,
-            'description' => 'Retainer converted to invoice',
-            'total_debit' => $totalAmount,
-            'total_credit' => $totalAmount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $retainerDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'retainer_to_invoice',
+            'reference_id'      => $retainer->id,
+            'description'       => 'Retainer converted to invoice',
+            'total_debit'       => $totalAmount,
+            'total_credit'      => $totalAmount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($retainerDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         JournalEntryItem::create([
@@ -181,21 +228,27 @@ class JournalService
         $totalCredit = $salesInvoice->subtotal - $salesInvoice->discount_amount + ($salesInvoice->tax_amount ?? 0);
         $this->validateBalance($totalDebit, $totalCredit);
 
+        $serviceDate = $salesInvoice->invoice_date ?? now()->toDateString();
+        $this->assertPeriodOpen($serviceDate);
+
         $arAccount = ChartOfAccount::where('account_code', '1100')->where('created_by', creatorId())->first();
         $serviceRevenueAccount = ChartOfAccount::where('account_code', '4200')->where('created_by', creatorId())->first();
         $taxAccount = ChartOfAccount::where('account_code', '2210')->where('created_by', creatorId())->first();
 
         $journalEntry = JournalEntry::create([
-            'journal_date' => $salesInvoice->invoice_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'service_invoice',
-            'reference_id' => $salesInvoice->id,
-            'description' => 'Service Invoice #' . $salesInvoice->invoice_number,
-            'total_debit' => $salesInvoice->total_amount,
-            'total_credit' => $salesInvoice->total_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $serviceDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'service_invoice',
+            'reference_id'      => $salesInvoice->id,
+            'description'       => 'Service Invoice #' . $salesInvoice->invoice_number,
+            'total_debit'       => $salesInvoice->total_amount,
+            'total_credit'      => $salesInvoice->total_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($serviceDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         JournalEntryItem::create([
@@ -251,21 +304,27 @@ class JournalService
         $totalCredit = $purchaseInvoice->total_amount;
         $this->validateBalance($totalDebit, $totalCredit);
 
+        $purchaseDate = $purchaseInvoice->invoice_date ?? now()->toDateString();
+        $this->assertPeriodOpen($purchaseDate);
+
         $apAccount = ChartOfAccount::where('account_code', '2000')->where('created_by', creatorId())->first();
         $inventoryAccount = ChartOfAccount::where('account_code', '1200')->where('created_by', creatorId())->first();
         $taxAccount = ChartOfAccount::where('account_code', '1500')->where('created_by', creatorId())->first();
 
         $journalEntry = JournalEntry::create([
-            'journal_date' => $purchaseInvoice->invoice_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'purchase_invoice',
-            'reference_id' => $purchaseInvoice->id,
-            'description' => 'Purchase Invoice #' . $purchaseInvoice->invoice_number,
-            'total_debit' => $purchaseInvoice->total_amount,
-            'total_credit' => $purchaseInvoice->total_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $purchaseDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'purchase_invoice',
+            'reference_id'      => $purchaseInvoice->id,
+            'description'       => 'Supplier Invoice #' . $purchaseInvoice->invoice_number,
+            'total_debit'       => $purchaseInvoice->total_amount,
+            'total_credit'      => $purchaseInvoice->total_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($purchaseDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         JournalEntryItem::create([
@@ -323,17 +382,23 @@ class JournalService
         // Validate amounts balance
         $this->validateBalance($customerPayment->payment_amount, $customerPayment->payment_amount);
 
+        $custPayDate = $customerPayment->payment_date ?? now()->toDateString();
+        $this->assertPeriodOpen($custPayDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $customerPayment->payment_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'customer_payment',
-            'reference_id' => $customerPayment->id,
-            'description' => 'Customer Payment #' . $customerPayment->payment_number,
-            'total_debit' => $customerPayment->payment_amount,
-            'total_credit' => $customerPayment->payment_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $custPayDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'customer_payment',
+            'reference_id'      => $customerPayment->id,
+            'description'       => 'Income Receipt #' . $customerPayment->payment_number,
+            'total_debit'       => $customerPayment->payment_amount,
+            'total_credit'      => $customerPayment->payment_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($custPayDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Specific Bank Account (from GL Account)
@@ -386,17 +451,23 @@ class JournalService
         // Validate amounts balance
         $this->validateBalance($vendorPayment->payment_amount, $vendorPayment->payment_amount);
 
+        $vendPayDate = $vendorPayment->payment_date ?? now()->toDateString();
+        $this->assertPeriodOpen($vendPayDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $vendorPayment->payment_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'vendor_payment',
-            'reference_id' => $vendorPayment->id,
-            'description' => 'Vendor Payment #' . $vendorPayment->payment_number,
-            'total_debit' => $vendorPayment->payment_amount,
-            'total_credit' => $vendorPayment->payment_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $vendPayDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'vendor_payment',
+            'reference_id'      => $vendorPayment->id,
+            'description'       => 'Supplier Payment #' . $vendorPayment->payment_number,
+            'total_debit'       => $vendorPayment->payment_amount,
+            'total_credit'      => $vendorPayment->payment_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($vendPayDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
         // Debit: Accounts Payable
         JournalEntryItem::create([
@@ -451,17 +522,23 @@ class JournalService
         // Validate amounts balance
         $this->validateBalance($revenueEntry->amount, $revenueEntry->amount);
 
+        $revDate = $revenueEntry->entry_date ?? now()->toDateString();
+        $this->assertPeriodOpen($revDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $revenueEntry->entry_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'revenue',
-            'reference_id' => $revenueEntry->id,
-            'description' => 'Revenue Entry - #' . $revenueEntry->revenue_number,
-            'total_debit' => $revenueEntry->amount,
-            'total_credit' => $revenueEntry->amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $revDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'revenue',
+            'reference_id'      => $revenueEntry->id,
+            'description'       => 'Income Entry #' . $revenueEntry->revenue_number,
+            'total_debit'       => $revenueEntry->amount,
+            'total_credit'      => $revenueEntry->amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($revDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Specific Bank Account (from GL Account)
@@ -517,17 +594,23 @@ class JournalService
         // Validate amounts balance
         $this->validateBalance($expenseEntry->amount, $expenseEntry->amount);
 
+        $expDate = $expenseEntry->entry_date ?? now()->toDateString();
+        $this->assertPeriodOpen($expDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $expenseEntry->entry_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'expense',
-            'reference_id' => $expenseEntry->id,
-            'description' => 'Expense Entry - #' . $expenseEntry->expense_number,
-            'total_debit' => $expenseEntry->amount,
-            'total_credit' => $expenseEntry->amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $expDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'expense',
+            'reference_id'      => $expenseEntry->id,
+            'description'       => 'Expenditure Entry #' . $expenseEntry->expense_number,
+            'total_debit'       => $expenseEntry->amount,
+            'total_credit'      => $expenseEntry->amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($expDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Selected Expense Account
@@ -579,17 +662,23 @@ class JournalService
 
         $inventoryAccount = ChartOfAccount::where('account_code', '1200')->where('created_by', creatorId())->first();
 
+        $transferDate = $stockTransfer->date ?? now()->toDateString();
+        $this->assertPeriodOpen($transferDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $stockTransfer->date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'stock_transfer',
-            'reference_id' => $stockTransfer->id,
-            'description' => 'Stock Transfer #' . $stockTransfer->id . ' - ' . $stockTransfer->fromWarehouse->name . ' to ' . $stockTransfer->toWarehouse->name,
-            'total_debit' => $transferValue,
-            'total_credit' => $transferValue,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $transferDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'stock_transfer',
+            'reference_id'      => $stockTransfer->id,
+            'description'       => 'Stores Transfer #' . $stockTransfer->id . ' — ' . $stockTransfer->fromWarehouse->name . ' to ' . $stockTransfer->toWarehouse->name,
+            'total_debit'       => $transferValue,
+            'total_credit'      => $transferValue,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($transferDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: To Warehouse Inventory
@@ -700,17 +789,23 @@ class JournalService
         $inventoryAccount = ChartOfAccount::where('account_code', '1200')->where('created_by', creatorId())->first();
         $taxAccount = ChartOfAccount::where('account_code', '1500')->where('created_by', creatorId())->first();
 
+        $debitDate = $debitNote->debit_note_date ?? now()->toDateString();
+        $this->assertPeriodOpen($debitDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $debitNote->debit_note_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'debit_note',
-            'reference_id' => $debitNote->id,
-            'description' => 'Debit Note #' . $debitNote->debit_note_number,
-            'total_debit' => $debitNote->total_amount,
-            'total_credit' => $debitNote->total_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $debitDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'debit_note',
+            'reference_id'      => $debitNote->id,
+            'description'       => 'Debit Note #' . $debitNote->debit_note_number,
+            'total_debit'       => $debitNote->total_amount,
+            'total_credit'      => $debitNote->total_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($debitDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         JournalEntryItem::create([
@@ -771,17 +866,23 @@ class JournalService
         $salesAccount = ChartOfAccount::where('account_code', '4100')->where('created_by', creatorId())->first();
         $taxAccount = ChartOfAccount::where('account_code', '2210')->where('created_by', creatorId())->first();
 
+        $creditDate = $creditNote->credit_note_date ?? now()->toDateString();
+        $this->assertPeriodOpen($creditDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $creditNote->credit_note_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'credit_note',
-            'reference_id' => $creditNote->id,
-            'description' => 'Credit Note #' . $creditNote->credit_note_number,
-            'total_debit' => $creditNote->total_amount,
-            'total_credit' => $creditNote->total_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $creditDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'credit_note',
+            'reference_id'      => $creditNote->id,
+            'description'       => 'Credit Note #' . $creditNote->credit_note_number,
+            'total_debit'       => $creditNote->total_amount,
+            'total_credit'      => $creditNote->total_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($creditDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Sales Revenue (reduces revenue)
@@ -847,17 +948,23 @@ class JournalService
 
         $this->validateBalance($totalDebit, $totalCredit);
 
+        $btDate = $bankTransfer->transfer_date ?? now()->toDateString();
+        $this->assertPeriodOpen($btDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $bankTransfer->transfer_date,
-            'entry_type' => 'automatic',
-            'reference_type' => 'bank_transfer',
-            'reference_id' => $bankTransfer->id,
-            'description' => 'Bank Transfer #' . $bankTransfer->transfer_number,
-            'total_debit' => $totalDebit,
-            'total_credit' => $totalCredit,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $btDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'bank_transfer',
+            'reference_id'      => $bankTransfer->id,
+            'description'       => 'Bank Transfer #' . $bankTransfer->transfer_number,
+            'total_debit'       => $totalDebit,
+            'total_credit'      => $totalCredit,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($btDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
 
         // Debit: Destination Bank Account
@@ -913,17 +1020,23 @@ class JournalService
         // Validate amounts balance
         $this->validateBalance($retainerPayment->payment_amount, $retainerPayment->payment_amount);
 
+        $retPayDate = $retainerPayment->payment_date ?? now()->toDateString();
+        $this->assertPeriodOpen($retPayDate);
+
         $journalEntry = JournalEntry::create([
-            'journal_date' => $retainerPayment->payment_date ?? now(),
-            'entry_type' => 'automatic',
-            'reference_type' => 'retainer_payment',
-            'reference_id' => $retainerPayment->id,
-            'description' => 'Retainer Payment from ' . $retainerPayment->customer->name,
-            'total_debit' => $retainerPayment->payment_amount,
-            'total_credit' => $retainerPayment->payment_amount,
-            'status' => 'posted',
-            'creator_id' => Auth::id(),
-            'created_by' => creatorId()
+            'journal_date'      => $retPayDate,
+            'entry_type'        => 'automatic',
+            'reference_type'    => 'retainer_payment',
+            'reference_id'      => $retainerPayment->id,
+            'description'       => 'Advance Receipt from ' . $retainerPayment->customer->name,
+            'total_debit'       => $retainerPayment->payment_amount,
+            'total_credit'      => $retainerPayment->payment_amount,
+            'status'            => 'posted',
+            'fiscal_period_id'  => $this->resolveFiscalPeriodId($retPayDate),
+            'approval_status'   => 'approved',
+            'prepared_by'       => Auth::id(),
+            'creator_id'        => Auth::id(),
+            'created_by'        => creatorId(),
         ]);
         // Debit: Specific Bank Account
         JournalEntryItem::create([
@@ -1839,6 +1952,288 @@ class JournalService
 
         $this->updateAccountBalances($journalEntry);
         return $journalEntry;
+    }
+
+    // =========================================================================
+    // FIXED ASSETS — IPSAS 17
+    // =========================================================================
+
+    /**
+     * Post a monthly straight-line depreciation journal for a fixed asset.
+     *
+     *   DR: Depreciation Expense Account  (depreciation_expense_account_id)
+     *   CR: Accumulated Depreciation      (accumulated_depreciation_account_id)
+     *
+     * Period-lock is enforced via assertPeriodOpen(). The journal carries
+     * the asset's fund_code for fund-level reporting.
+     */
+    public function createDepreciationJournal($asset, float $amount, string $date)
+    {
+        $this->assertPeriodOpen($date);
+
+        $expenseAccount = ChartOfAccount::find($asset->depreciation_expense_account_id);
+        $contraAccount  = ChartOfAccount::find($asset->accumulated_depreciation_account_id);
+
+        if (! $expenseAccount || ! $contraAccount) {
+            throw new \Exception("Depreciation GL accounts not found for asset {$asset->asset_code}.");
+        }
+
+        $this->validateBalance($amount, $amount);
+
+        $journalEntry = JournalEntry::create([
+            'journal_date'     => $date,
+            'entry_type'       => 'automatic',
+            'reference_type'   => 'fixed_asset_depreciation',
+            'reference_id'     => $asset->id,
+            'description'      => "Depreciation — {$asset->asset_name} ({$asset->asset_code}) — " . date('F Y', strtotime($date)),
+            'total_debit'      => $amount,
+            'total_credit'     => $amount,
+            'status'           => 'posted',
+            'fiscal_period_id' => $this->resolveFiscalPeriodId($date),
+            'fund_code'        => $asset->fund?->code ?? null,
+            'approval_status'  => 'approved',
+            'prepared_by'      => Auth::id(),
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        JournalEntryItem::create([
+            'journal_entry_id' => $journalEntry->id,
+            'account_id'       => $expenseAccount->id,
+            'description'      => "Depreciation expense — {$asset->asset_code}",
+            'debit_amount'     => $amount,
+            'credit_amount'    => 0,
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        JournalEntryItem::create([
+            'journal_entry_id' => $journalEntry->id,
+            'account_id'       => $contraAccount->id,
+            'description'      => "Accumulated depreciation — {$asset->asset_code}",
+            'debit_amount'     => 0,
+            'credit_amount'    => $amount,
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        $this->updateAccountBalances($journalEntry);
+
+        // Notify BudgetPlanner so any depreciation expense budget line
+        // gets its spent_amount updated (consistent with all other journal types).
+        try {
+            UpdateBudgetSpending::dispatch($journalEntry);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('UpdateBudgetSpending dispatch failed for depreciation: ' . $e->getMessage());
+        }
+
+        return $journalEntry;
+    }
+
+    /**
+     * Post an asset disposal journal per IPSAS 17.
+     *
+     *   DR: Accumulated Depreciation          (full accumulated amount)
+     *   DR: Other Receivables / Cash (1130)   (proceeds, if > 0)
+     *   DR: Loss on Disposal (5850)           (if proceeds < carrying amount)
+     *   CR: Asset at Cost                     (purchase_cost)
+     *   CR: Gain on Disposal (4800)           (if proceeds > carrying amount)
+     */
+    public function createAssetDisposalJournal($asset, float $proceeds, string $date)
+    {
+        $this->assertPeriodOpen($date);
+
+        $cost           = (float) $asset->purchase_cost;
+        $accumulated    = (float) $asset->accumulated_depreciation;
+        $carryingAmount = $cost - $accumulated;
+        $gainOrLoss     = $proceeds - $carryingAmount;
+
+        $assetAccount  = ChartOfAccount::find($asset->asset_account_id);
+        $contraAccount = $asset->accumulated_depreciation_account_id
+            ? ChartOfAccount::find($asset->accumulated_depreciation_account_id)
+            : null;
+
+        if (! $assetAccount) {
+            throw new \Exception("Asset GL account not found for asset {$asset->asset_code}.");
+        }
+
+        $gainAccount = ChartOfAccount::where('account_code', '4800')->where('created_by', creatorId())->first();
+        $lossAccount = ChartOfAccount::where('account_code', '5850')->where('created_by', creatorId())->first();
+        $cashAccount = ChartOfAccount::where('account_code', '1130')->where('created_by', creatorId())->first();
+
+        $totalDebit  = 0.0;
+        $totalCredit = 0.0;
+        $items       = [];
+
+        // CR: Asset at cost
+        $items[] = ['account_id' => $assetAccount->id, 'debit' => 0, 'credit' => $cost,
+                    'desc' => "Disposal of {$asset->asset_code} — cost"];
+        $totalCredit += $cost;
+
+        // DR: Remove accumulated depreciation
+        if ($accumulated > 0 && $contraAccount) {
+            $items[] = ['account_id' => $contraAccount->id, 'debit' => $accumulated, 'credit' => 0,
+                        'desc' => "Remove accumulated depreciation — {$asset->asset_code}"];
+            $totalDebit += $accumulated;
+        }
+
+        // DR: Proceeds received
+        if ($proceeds > 0 && $cashAccount) {
+            $items[] = ['account_id' => $cashAccount->id, 'debit' => $proceeds, 'credit' => 0,
+                        'desc' => "Proceeds from disposal of {$asset->asset_code}"];
+            $totalDebit += $proceeds;
+        }
+
+        // Gain (CR) or Loss (DR)
+        if ($gainOrLoss > 0.005 && $gainAccount) {
+            $gain = round($gainOrLoss, 2);
+            $items[] = ['account_id' => $gainAccount->id, 'debit' => 0, 'credit' => $gain,
+                        'desc' => "Gain on disposal — {$asset->asset_code}"];
+            $totalCredit += $gain;
+        } elseif ($gainOrLoss < -0.005 && $lossAccount) {
+            $loss = round(abs($gainOrLoss), 2);
+            $items[] = ['account_id' => $lossAccount->id, 'debit' => $loss, 'credit' => 0,
+                        'desc' => "Loss on disposal — {$asset->asset_code}"];
+            $totalDebit += $loss;
+        }
+
+        $totalDebit  = round($totalDebit, 2);
+        $totalCredit = round($totalCredit, 2);
+        $this->validateBalance($totalDebit, $totalCredit);
+
+        $journalEntry = JournalEntry::create([
+            'journal_date'     => $date,
+            'entry_type'       => 'automatic',
+            'reference_type'   => 'fixed_asset_disposal',
+            'reference_id'     => $asset->id,
+            'description'      => "Disposal of asset — {$asset->asset_name} ({$asset->asset_code})",
+            'total_debit'      => $totalDebit,
+            'total_credit'     => $totalCredit,
+            'status'           => 'posted',
+            'fiscal_period_id' => $this->resolveFiscalPeriodId($date),
+            'fund_code'        => $asset->fund?->code ?? null,
+            'approval_status'  => 'approved',
+            'prepared_by'      => Auth::id(),
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        foreach ($items as $item) {
+            JournalEntryItem::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id'       => $item['account_id'],
+                'description'      => $item['desc'],
+                'debit_amount'     => $item['debit'],
+                'credit_amount'    => $item['credit'],
+                'creator_id'       => Auth::id(),
+                'created_by'       => creatorId(),
+            ]);
+        }
+
+        $this->updateAccountBalances($journalEntry);
+        return $journalEntry;
+    }
+
+    /**
+     * Creates journal entry for a supplier invoice posted through a three-way-match
+     * procurement workflow (LPO → GRN → Invoice).
+     *
+     * Instead of debiting Inventory, this debits the expense/vote account defined
+     * on the LPO so expenditure is coded to the correct budget line.
+     *
+     *   DR: Vote / Expense Account (from LPO vote_account_id)
+     *   DR: VAT Input / Tax Receivable (if tax > 0)
+     *   CR: Accounts Payable (2000)
+     *
+     * Usage: PostPurchaseInvoiceListener when invoice has an LPO link.
+     */
+    public function createSupplierInvoiceExpenseJournal($purchaseInvoice, $expenseAccountId): void
+    {
+        $apAccount = ChartOfAccount::where('account_code', '2000')
+            ->where('created_by', creatorId())->first();
+        $expenseAccount = ChartOfAccount::find($expenseAccountId);
+        $taxAccount = null;
+
+        if (!$apAccount) {
+            throw new \Exception("Accounts Payable account (2000) not found.");
+        }
+        if (!$expenseAccount) {
+            throw new \Exception("Vote/expense account (id:{$expenseAccountId}) not found.");
+        }
+
+        if ($purchaseInvoice->tax_amount > 0) {
+            $taxAccount = ChartOfAccount::where('account_code', '1500')
+                ->where('created_by', creatorId())->first();
+        }
+
+        $netExpense  = (float)$purchaseInvoice->subtotal - (float)$purchaseInvoice->discount_amount;
+        $taxAmount   = (float)($purchaseInvoice->tax_amount ?? 0);
+        $totalCredit = $netExpense + $taxAmount;
+
+        $this->validateBalance($totalCredit, (float)$purchaseInvoice->total_amount);
+
+        $invoiceDate = $purchaseInvoice->invoice_date ?? now()->toDateString();
+        $this->assertPeriodOpen($invoiceDate);
+
+        $journalEntry = JournalEntry::create([
+            'journal_date'     => $invoiceDate,
+            'entry_type'       => 'automatic',
+            'reference_type'   => 'purchase_invoice',
+            'reference_id'     => $purchaseInvoice->id,
+            'description'      => 'Supplier Invoice #' . $purchaseInvoice->invoice_number,
+            'total_debit'      => $purchaseInvoice->total_amount,
+            'total_credit'     => $purchaseInvoice->total_amount,
+            'status'           => 'posted',
+            'fiscal_period_id' => $this->resolveFiscalPeriodId($invoiceDate),
+            'approval_status'  => 'approved',
+            'prepared_by'      => Auth::id(),
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        // Debit: Expense / Vote account
+        JournalEntryItem::create([
+            'journal_entry_id' => $journalEntry->id,
+            'account_id'       => $expenseAccount->id,
+            'description'      => 'Expenditure from ' . ($purchaseInvoice->vendor->name ?? 'supplier'),
+            'debit_amount'     => $netExpense,
+            'credit_amount'    => 0,
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        // Debit: VAT Input (if applicable)
+        if ($taxAmount > 0 && $taxAccount) {
+            JournalEntryItem::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id'       => $taxAccount->id,
+                'description'      => 'VAT on supplier invoice',
+                'debit_amount'     => $taxAmount,
+                'credit_amount'    => 0,
+                'creator_id'       => Auth::id(),
+                'created_by'       => creatorId(),
+            ]);
+        }
+
+        // Credit: Accounts Payable
+        JournalEntryItem::create([
+            'journal_entry_id' => $journalEntry->id,
+            'account_id'       => $apAccount->id,
+            'description'      => 'Payable to ' . ($purchaseInvoice->vendor->name ?? 'supplier'),
+            'debit_amount'     => 0,
+            'credit_amount'    => $purchaseInvoice->total_amount,
+            'creator_id'       => Auth::id(),
+            'created_by'       => creatorId(),
+        ]);
+
+        $this->updateAccountBalances($journalEntry);
+
+        // Notify BudgetPlanner to recalculate spending against this expense account
+        try {
+            UpdateBudgetSpending::dispatch($journalEntry);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('UpdateBudgetSpending dispatch failed: ' . $e->getMessage());
+        }
     }
 
 }

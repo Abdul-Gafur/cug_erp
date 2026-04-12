@@ -174,7 +174,7 @@ export default function Index() {
             sortable: false,
             render: (value: string) => (
                 <span className={getStatusBadgeClasses(value)}>
-                    {t(value.charAt(0).toUpperCase() + value.slice(1))}
+                    {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : '—'}
                 </span>
             )
         },
@@ -455,7 +455,7 @@ export default function Index() {
                                             </div>
                                             <div className="flex items-center justify-between p-3 border-t bg-gray-50/50">
                                                 <span className={getStatusBadgeClasses(debitNote.status)}>
-                                                    {t(debitNote.status.charAt(0).toUpperCase() + debitNote.status.slice(1))}
+                                                    {debitNote.status ? t(debitNote.status.charAt(0).toUpperCase() + debitNote.status.slice(1)) : '—'}
                                                 </span>
                                                 <div className="flex gap-1">
                                                     <TooltipProvider>

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from '@/lib/utils';
-import {       Building, Building2, Users, FileText, Settings, AlertTriangle,ShieldAlert,AlertOctagon , Calendar , Tag , DollarSign , Minus , CreditCard, Clock , Shield } from "lucide-react";
+import {       Building, Building2, Users, FileText, Settings, AlertTriangle,ShieldAlert,AlertOctagon , Calendar , Tag , DollarSign , Minus , CreditCard, Clock , Shield, MapPin } from "lucide-react";
 
 interface SidebarItem {
     key: string;
@@ -142,6 +142,13 @@ export default function SystemSetupSidebar({ activeItem, onSectionChange }: Syst
             icon: Shield,
             route: 'hrm.ip-restricts.index',
             permission: 'manage-ip-restricts'
+        },
+        {
+            key: 'attendance-settings',
+            label: t('Attendance Settings'),
+            icon: MapPin,
+            route: 'hrm.attendance-settings.index',
+            permission: 'manage-attendances'
         },
     ];
 

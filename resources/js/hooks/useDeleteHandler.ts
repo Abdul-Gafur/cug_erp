@@ -8,15 +8,17 @@ interface UseDeleteHandlerOptions {
     onError?: (error: any) => void;
 }
 
-export const useDeleteHandler = ({
-    routeName,
-    defaultMessage = 'Are you sure you want to delete this item?',
-    onSuccess,
-    onError
-}: UseDeleteHandlerOptions) => {
+export const useDeleteHandler = (options: UseDeleteHandlerOptions) => {
+    const {
+        routeName,
+        defaultMessage = 'Are you sure you want to delete this item?',
+        onSuccess,
+        onError
+    } = options || {};
+
     const [deleteState, setDeleteState] = useState<{
         isOpen: boolean;
-        id: number | string | null;
+        id: any;
         message: string;
     }>({
         isOpen: false,
@@ -24,7 +26,7 @@ export const useDeleteHandler = ({
         message: defaultMessage
     });
 
-    const openDeleteDialog = (id: number | string, message?: string) => {
+    const openDeleteDialog = (id: any, message?: string) => {
         setDeleteState({
             isOpen: true,
             id,

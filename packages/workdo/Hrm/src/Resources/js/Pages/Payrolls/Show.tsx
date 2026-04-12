@@ -174,7 +174,7 @@ export default function Show() {
                 };
                 return (
                     <span className={`px-2 py-1 rounded-full text-sm ${statusColors[value as keyof typeof statusColors] || statusColors.unpaid}`}>
-                        {t(value?.charAt(0).toUpperCase() + value?.slice(1) || 'Unpaid')}
+                        {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : t('Unpaid')}
                     </span>
                 );
             }
@@ -273,7 +273,7 @@ export default function Show() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-medium">{t('Frequency')}:</span>
-                                                <span>{t(payroll.payroll_frequency?.charAt(0).toUpperCase() + payroll.payroll_frequency?.slice(1))}</span>
+                                                <span>{payroll.payroll_frequency ? t(payroll.payroll_frequency.charAt(0).toUpperCase() + payroll.payroll_frequency.slice(1)) : '—'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -286,7 +286,7 @@ export default function Show() {
                                 payroll.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                                 'bg-yellow-100 text-yellow-800'
                             }`}>
-                                {t(payroll.status?.charAt(0).toUpperCase() + payroll.status?.slice(1) || 'Draft')}
+                                {payroll.status ? t(payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)) : t('Draft')}
                             </span>
                         </div>
                     </CardHeader>

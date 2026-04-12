@@ -6,6 +6,7 @@ use Workdo\DoubleEntry\Http\Controllers\LedgerSummaryController;
 use Workdo\DoubleEntry\Http\Controllers\ProfitLossController;
 use Workdo\DoubleEntry\Http\Controllers\TrialBalanceController;
 use Workdo\DoubleEntry\Http\Controllers\ReportController;
+use Workdo\DoubleEntry\Http\Controllers\DiagnosticsController;
 
 Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:DoubleEntry'])->group(function () {
 
@@ -39,6 +40,12 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:DoubleEntry'])->g
     Route::prefix('double-entry/trial-balance')->name('double-entry.trial-balance.')->group(function () {
         Route::get('/', [TrialBalanceController::class, 'index'])->name('index');
         Route::get('/print', [TrialBalanceController::class, 'print'])->name('print');
+    });
+
+    Route::prefix('double-entry/diagnostics')->name('double-entry.diagnostics.')->group(function () {
+        Route::get('/', [DiagnosticsController::class, 'index'])->name('index');
+        Route::post('/correcting-entry/{journalEntryId}', [DiagnosticsController::class, 'createCorrectingEntry'])->name('correcting-entry');
+        Route::post('/rebuild-balance-sheet/{balanceSheetId}', [DiagnosticsController::class, 'rebuildBalanceSheet'])->name('rebuild-balance-sheet');
     });
 
     Route::prefix('double-entry/reports')->name('double-entry.reports.')->group(function () {

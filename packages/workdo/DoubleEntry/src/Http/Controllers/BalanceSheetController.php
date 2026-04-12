@@ -119,11 +119,35 @@ class BalanceSheetController extends Controller
                     ->select('id', 'balance_sheet_date', 'financial_year')
                     ->get();
 
+                // Prior year comparative: find most-recent finalized BS from the year before this one
+                $priorYearGroupedItems = null;
+                $priorYearTotals       = null;
+                $currentYear = intval($balanceSheet->financial_year);
+                $priorYearSheet = BalanceSheet::with(['items.account'])
+                    ->where('created_by', creatorId())
+                    ->where('financial_year', (string)($currentYear - 1))
+                    ->where('status', 'finalized')
+                    ->orderBy('balance_sheet_date', 'desc')
+                    ->first();
+
+                if ($priorYearSheet) {
+                    $priorYearGroupedItems = $priorYearSheet->items->groupBy(['section_type', 'sub_section']);
+                    $priorYearTotals = [
+                        'total_assets'      => $priorYearSheet->total_assets,
+                        'total_liabilities' => $priorYearSheet->total_liabilities,
+                        'total_net_assets'  => $priorYearSheet->total_equity,
+                    ];
+                }
+
                 return Inertia::render('DoubleEntry/BalanceSheets/View', [
-                    'balanceSheet' => $balanceSheet,
-                    'groupedItems' => $groupedItems,
-                    'allBalanceSheets' => $allBalanceSheets,
-                    'otherBalanceSheets' => $otherBalanceSheets
+                    'balanceSheet'          => $balanceSheet,
+                    'groupedItems'          => $groupedItems,
+                    'allBalanceSheets'      => $allBalanceSheets,
+                    'otherBalanceSheets'    => $otherBalanceSheets,
+                    'priorYearGroupedItems' => $priorYearGroupedItems,
+                    'priorYearTotals'       => $priorYearTotals,
+                    'isAudited'             => $balanceSheet->status === 'finalized',
+                    'priorYear'             => $currentYear - 1,
                 ]);
             }
             return back()->with('error', __('Balance sheet not found'));
@@ -298,9 +322,33 @@ class BalanceSheetController extends Controller
 
             $groupedItems = $balanceSheet->items->groupBy(['section_type', 'sub_section']);
 
+            // Prior year comparative for PDF
+            $priorYearGroupedItems = null;
+            $priorYearTotals       = null;
+            $currentYear = intval($balanceSheet->financial_year);
+            $priorYearSheet = BalanceSheet::with(['items.account'])
+                ->where('created_by', creatorId())
+                ->where('financial_year', (string)($currentYear - 1))
+                ->where('status', 'finalized')
+                ->orderBy('balance_sheet_date', 'desc')
+                ->first();
+
+            if ($priorYearSheet) {
+                $priorYearGroupedItems = $priorYearSheet->items->groupBy(['section_type', 'sub_section']);
+                $priorYearTotals = [
+                    'total_assets'      => $priorYearSheet->total_assets,
+                    'total_liabilities' => $priorYearSheet->total_liabilities,
+                    'total_net_assets'  => $priorYearSheet->total_equity,
+                ];
+            }
+
             return Inertia::render('DoubleEntry/BalanceSheets/Print', [
-                'balanceSheet' => $balanceSheet,
-                'groupedItems' => $groupedItems
+                'balanceSheet'          => $balanceSheet,
+                'groupedItems'          => $groupedItems,
+                'priorYearGroupedItems' => $priorYearGroupedItems,
+                'priorYearTotals'       => $priorYearTotals,
+                'isAudited'             => $balanceSheet->status === 'finalized',
+                'priorYear'             => $currentYear - 1,
             ]);
         }
         else{

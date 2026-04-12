@@ -6,19 +6,15 @@ import { Label } from '@/components/ui/label';
 import InputError from '@/components/ui/input-error';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditBudgetPeriodProps, EditBudgetPeriodFormData } from './types';
-import { usePage } from '@inertiajs/react';
 
 export default function Edit({ budgetperiod, onSuccess }: EditBudgetPeriodProps) {
-    const { users } = usePage<any>().props;
     const { t } = useTranslation();
     const { data, setData, put, processing, errors } = useForm<EditBudgetPeriodFormData>({
-        period_name: budgetperiod.period_name ?? '',
+        period_name:    budgetperiod.period_name ?? '',
         financial_year: budgetperiod.financial_year ?? '',
-        start_date: budgetperiod.start_date || '',
-        end_date: budgetperiod.end_date || '',
-        status: budgetperiod.status ?? '',
+        start_date:     budgetperiod.start_date || '',
+        end_date:       budgetperiod.end_date || '',
     });
 
 
@@ -85,21 +81,14 @@ export default function Edit({ budgetperiod, onSuccess }: EditBudgetPeriodProps)
                 </div>
 
                 <div>
-                    <Label htmlFor="status">{t('Status')}</Label>
-                    <Select value={data.status || ''} onValueChange={(value) => setData('status', value)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder={t('Select Status')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="draft">{t('Draft')}</SelectItem>
-                            <SelectItem value="approved">{t('Approved')}</SelectItem>
-                            <SelectItem value="active">{t('Active')}</SelectItem>
-                            <SelectItem value="closed">{t('Closed')}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <InputError message={errors.status} />
+                    <Label>{t('Status')}</Label>
+                    <p className="text-sm text-gray-600 mt-1 px-3 py-2 bg-gray-50 border rounded-md capitalize">
+                        {budgetperiod.status}
+                        <span className="ml-2 text-xs text-gray-400">
+                            {t('(use Approve / Activate / Close buttons to change)')}
+                        </span>
+                    </p>
                 </div>
-
 
 
                 <div className="flex justify-end gap-2">

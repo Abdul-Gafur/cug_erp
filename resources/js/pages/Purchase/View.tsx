@@ -1,5 +1,5 @@
-import React from 'react';
-import { Head, usePage, router } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, usePage, router, useForm } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import { PurchaseInvoice } from './types';
 import AuthenticatedLayout from '@/layouts/authenticated-layout';
@@ -8,19 +8,171 @@ import { getStatusBadgeClasses } from './utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, FileText, ArrowLeft, Building2, User, Calendar, Package, MapPin, Download } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Edit, FileText, ArrowLeft, Building2, User, Calendar, Package, MapPin, Download, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePageButtons } from '@/hooks/usePageButtons';
 
+interface Discrepancy {
+    type: string;
+    item?: string;
+    message: string;
+    lpo_qty?: number;
+    grn_qty?: number;
+    invoice_qty?: number;
+    lpo_price?: number;
+    invoice_price?: number;
+    variance_pct?: number;
+}
+
+interface MatchLog {
+    id: number;
+    match_status: string;
+    discrepancies: Discrepancy[] | null;
+    override_reason?: string;
+    override_at?: string;
+}
+
 interface ViewProps {
-    invoice: PurchaseInvoice;
+    invoice: PurchaseInvoice & {
+        lpo_id?: number;
+        match_status?: string;
+        match_override_reason?: string;
+    };
+    matchLog?: MatchLog;
     auth: any;
     [key: string]: any;
 }
 
+function MatchStatusPanel({ invoice, matchLog, t, auth }: {
+    invoice: ViewProps['invoice'];
+    matchLog?: MatchLog;
+    t: (k: string) => string;
+    auth: any;
+}) {
+    const [showOverrideForm, setShowOverrideForm] = useState(false);
+    const { data, setData, post, processing, errors } = useForm({ override_reason: '' });
+
+    if (!invoice.lpo_id) return null;
+
+    const status = invoice.match_status ?? 'pending';
+
+    const submitOverride = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('purchase-invoices.override-match', invoice.id), {
+            onSuccess: () => { setShowOverrideForm(false); router.reload(); }
+        });
+    };
+
+    return (
+        <Card className={`border-l-4 ${
+            status === 'pass'     ? 'border-l-green-500' :
+            status === 'fail'     ? 'border-l-red-500' :
+            status === 'override' ? 'border-l-amber-500' :
+            'border-l-gray-300'
+        }`}>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                    {status === 'pass'     && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    {status === 'fail'     && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                    {status === 'override' && <ShieldCheck className="h-4 w-4 text-amber-600" />}
+                    {status === 'pending'  && <FileText className="h-4 w-4 text-gray-400" />}
+                    {t('Three-Way Match')}
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        status === 'pass'     ? 'bg-green-100 text-green-800' :
+                        status === 'fail'     ? 'bg-red-100 text-red-800' :
+                        status === 'override' ? 'bg-amber-100 text-amber-800' :
+                        'bg-gray-100 text-gray-600'
+                    }`}>
+                        {t(status.charAt(0).toUpperCase() + status.slice(1))}
+                    </span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {status === 'pass' && (
+                    <p className="text-sm text-green-700">{t('LPO, GRN, and invoice quantities and prices all match. Invoice may be posted.')}</p>
+                )}
+
+                {status === 'pending' && (
+                    <p className="text-sm text-gray-500">{t('Three-way match has not been performed yet. Post the invoice to run the check.')}</p>
+                )}
+
+                {status === 'override' && matchLog?.override_reason && (
+                    <div className="text-sm">
+                        <p className="text-amber-700">{t('A Finance Officer has overridden the failed match.')}</p>
+                        <p className="mt-1 text-gray-600"><span className="font-semibold">{t('Reason')}:</span> {matchLog.override_reason}</p>
+                    </div>
+                )}
+
+                {status === 'fail' && matchLog && (
+                    <div className="space-y-3">
+                        <p className="text-sm text-red-700 font-medium">{t('The following discrepancies were found:')}</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs border-collapse">
+                                <thead>
+                                    <tr className="bg-red-50 border-b border-red-100">
+                                        <th className="px-3 py-2 text-left font-semibold">{t('Item')}</th>
+                                        <th className="px-3 py-2 text-left font-semibold">{t('Issue')}</th>
+                                        <th className="px-3 py-2 text-left font-semibold">{t('Detail')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(matchLog.discrepancies ?? []).map((d, i) => (
+                                        <tr key={i} className="border-b border-red-50">
+                                            <td className="px-3 py-2 font-medium">{d.item ?? '—'}</td>
+                                            <td className="px-3 py-2">{t(d.type)}</td>
+                                            <td className="px-3 py-2 text-gray-600">{d.message}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Finance Officer override */}
+                        {auth.user?.permissions?.includes('override-match') && !showOverrideForm && (
+                            <div className="pt-2">
+                                <p className="text-xs text-gray-500 mb-2">{t('If you have reviewed and accepted these discrepancies, you may override the failed match with a recorded reason.')}</p>
+                                <Button variant="outline" size="sm" onClick={() => setShowOverrideForm(true)}>
+                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                    {t('Record Override')}
+                                </Button>
+                            </div>
+                        )}
+
+                        {showOverrideForm && (
+                            <form onSubmit={submitOverride} className="space-y-3 bg-amber-50 border border-amber-200 rounded p-4">
+                                <p className="text-sm font-semibold text-amber-800">{t('Finance Officer Override')}</p>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">{t('Override Reason')} <span className="text-red-500">*</span></Label>
+                                    <Textarea
+                                        value={data.override_reason}
+                                        onChange={(e) => setData('override_reason', e.target.value)}
+                                        placeholder={t('State the reason for accepting these discrepancies…')}
+                                        rows={3}
+                                    />
+                                    {errors.override_reason && <p className="text-xs text-red-500">{errors.override_reason}</p>}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button type="submit" size="sm" disabled={processing}>
+                                        {processing ? t('Saving…') : t('Confirm Override')}
+                                    </Button>
+                                    <Button type="button" size="sm" variant="ghost" onClick={() => setShowOverrideForm(false)}>
+                                        {t('Cancel')}
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function View() {
     const { t } = useTranslation();
-    const { invoice, auth } = usePage<ViewProps>().props;
+    const { invoice, matchLog, auth } = usePage<ViewProps>().props;
 
 
     const signatureStatusButtons = usePageButtons('signatureViewBtn', {
@@ -113,6 +265,12 @@ export default function View() {
                                         <span className="text-muted-foreground">{t('Warehouse')}</span>
                                         <span>{invoice.warehouse?.name || '-'}</span>
                                     </div>
+                                    {invoice.lpo_id && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('LPO Reference')}</span>
+                                            <span className="font-mono text-xs">{t('LPO linked')}</span>
+                                        </div>
+                                    )}
                                     {invoice.payment_terms && (
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('Terms')}</span>
@@ -177,6 +335,11 @@ export default function View() {
                         ))}
                     </CardContent>
                 </Card>
+
+                {/* Three-Way Match Status (only shown for LPO-linked invoices) */}
+                {invoice.lpo_id && (
+                    <MatchStatusPanel invoice={invoice} matchLog={matchLog} t={t} auth={auth} />
+                )}
 
                 {/* Invoice Items */}
                 <Card>

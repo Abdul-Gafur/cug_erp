@@ -1,0 +1,80 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [ main, staging ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  web-deploy:
+    name: 🎉 Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v6
+
+    - name: 🔍 Set Deployment Config
+      id: deploy-config
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "deploy_path=/home/sites/40a/7/78c78ddab4/cug_erp" >> $GITHUB_OUTPUT
+          echo "env_name=Production" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+          echo "deploy_path=/home/sites/40a/7/78c78ddab4/testcug_erp" >> $GITHUB_OUTPUT
+          echo "env_name=Staging" >> $GITHUB_OUTPUT
+        else
+          echo "Unknown branch, failing."
+          exit 1
+        fi
+
+    - name: 🟢 Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
+        coverage: none
+
+    - name: 📦 Install Composer Dependencies
+      run: composer install --no-ansi --no-interaction --no-progress --no-dev --optimize-autoloader
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+
+    - name: 🔨 Install & Build Assets
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
+
+    - name: 🔑 Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+        if_key_exists: replace
+
+    - name: 📂 Sync Files (Rsync)
+      run: |
+        rsync -avz --delete \
+          --exclude='.git*' \
+          --exclude='node_modules' \
+          --exclude='.env' \
+          --exclude='tests' \
+          --exclude='.github' \
+          --exclude='.editorconfig' \
+          --exclude='storage/app/' \
+          --exclude='storage/logs/' \
+          --exclude='storage/framework/cache/' \
+          --exclude='storage/framework/sessions/' \
+          --exclude='public/storage' \
+          ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ steps.deploy-config.outputs.deploy_path }}
+
+    - name: 🚀 Run Post-Deployment Commands
+      run: |
+        DEPLOY_PATH="${{ steps.deploy-config.outputs.deploy_path }}"
+        ssh -T -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "bash ${DEPLOY_PATH}/scripts/deploy.sh ${DEPLOY_PATH}"

@@ -2,11 +2,8 @@
 
 use Workdo\Account\Http\Controllers\RevenueCategoriesController;
 use Workdo\Account\Http\Controllers\ExpenseCategoriesController;
-
 use Workdo\Account\Http\Controllers\ChartOfAccountController;
-
 use Workdo\Account\Http\Controllers\BankAccountController;
-
 use Illuminate\Support\Facades\Route;
 use Workdo\Account\Http\Controllers\AccountTypeController;
 use Workdo\Account\Http\Controllers\DashboardController;
@@ -22,6 +19,10 @@ use Workdo\Account\Http\Controllers\CustomerPaymentController;
 use Workdo\Account\Http\Controllers\RevenueController;
 use Workdo\Account\Http\Controllers\ExpenseController;
 use Workdo\Account\Http\Controllers\ReportsController;
+use Workdo\Account\Http\Controllers\FinancialReportsController;
+use Workdo\Account\Http\Controllers\FixedAssetCategoryController;
+use Workdo\Account\Http\Controllers\FixedAssetController;
+use Workdo\Account\Http\Controllers\AssetRegisterReportController;
 use Workdo\Account\Models\AccountType;
 
 Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group(function () {
@@ -60,6 +61,12 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group
         Route::delete('/{vendorPayment}', [VendorPaymentController::class, 'destroy'])->name('destroy');
         Route::get('/vendors/{vendorId}/outstanding', [VendorPaymentController::class, 'getOutstandingInvoices'])->name('vendors.outstanding');
         Route::post('/{vendorPayment}/update-status', [VendorPaymentController::class, 'updateStatus'])->name('update-status');
+        Route::get('/{vendorPayment}/print-voucher', [VendorPaymentController::class, 'printVoucher'])->name('print-voucher');
+        // Step 2 — Invoice Submission & Verification
+        Route::post('/{vendorPayment}/submit-invoice', [VendorPaymentController::class, 'submitInvoice'])->name('submit-invoice');
+        Route::post('/{vendorPayment}/verify-invoice', [VendorPaymentController::class, 'verifyInvoice'])->name('verify-invoice');
+        // Step 3 — 3-Stage Approval
+        Route::post('/{vendorPayment}/approve', [VendorPaymentController::class, 'approve'])->name('approve');
     });
 
     Route::prefix('account/bank-transactions')->name('account.bank-transactions.')->group(function () {
@@ -133,6 +140,33 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group
         Route::post('/{expense}/post', [ExpenseController::class, 'post'])->name('post');
     });
 
+    // -------------------------------------------------------------------------
+    // Fixed Assets — IPSAS 17
+    // -------------------------------------------------------------------------
+    Route::prefix('account/fixed-asset-categories')->name('account.fixed-asset-categories.')->group(function () {
+        Route::get('/', [FixedAssetCategoryController::class, 'index'])->name('index');
+        Route::post('/', [FixedAssetCategoryController::class, 'store'])->name('store');
+        Route::put('/{fixedassetcategory}', [FixedAssetCategoryController::class, 'update'])->name('update');
+        Route::delete('/{fixedassetcategory}', [FixedAssetCategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('account/fixed-assets')->name('account.fixed-assets.')->group(function () {
+        Route::get('/', [FixedAssetController::class, 'index'])->name('index');
+        Route::get('/create', [FixedAssetController::class, 'create'])->name('create');
+        Route::post('/', [FixedAssetController::class, 'store'])->name('store');
+        Route::get('/{fixedasset}', [FixedAssetController::class, 'show'])->name('show');
+        Route::get('/{fixedasset}/edit', [FixedAssetController::class, 'edit'])->name('edit');
+        Route::put('/{fixedasset}', [FixedAssetController::class, 'update'])->name('update');
+        Route::delete('/{fixedasset}', [FixedAssetController::class, 'destroy'])->name('destroy');
+        Route::post('/{fixedasset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('depreciate');
+        Route::post('/{fixedasset}/dispose', [FixedAssetController::class, 'dispose'])->name('dispose');
+    });
+
+    Route::prefix('account/reports/asset-register')->name('account.reports.asset-register.')->group(function () {
+        Route::get('/', [AssetRegisterReportController::class, 'index'])->name('index');
+        Route::get('/print', [AssetRegisterReportController::class, 'print'])->name('print');
+    });
+
     Route::prefix('account/reports')->name('account.reports.')->group(function () {
         Route::get('/', [ReportsController::class, 'index'])->name('index');
         Route::get('/invoice-aging', [ReportsController::class, 'invoiceAging'])->name('invoice-aging');
@@ -149,5 +183,14 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group
         Route::get('/customer/{customer}/print', [ReportsController::class, 'printCustomerDetail'])->name('customer-detail.print');
         Route::get('/vendor/{vendor}', [ReportsController::class, 'vendorDetail'])->name('vendor-detail');
         Route::get('/vendor/{vendor}/print', [ReportsController::class, 'printVendorDetail'])->name('vendor-detail.print');
+        // IPSAS Financial Statements
+        Route::get('/statement-of-position', [FinancialReportsController::class, 'statementOfPosition'])->name('statement-of-position');
+        Route::get('/statement-of-position/print', [FinancialReportsController::class, 'printStatementOfPosition'])->name('statement-of-position.print');
+        Route::get('/statement-of-performance', [FinancialReportsController::class, 'statementOfPerformance'])->name('statement-of-performance');
+        Route::get('/statement-of-performance/print', [FinancialReportsController::class, 'printStatementOfPerformance'])->name('statement-of-performance.print');
+        Route::get('/cash-flow', [FinancialReportsController::class, 'cashFlowStatement'])->name('cash-flow');
+        Route::get('/cash-flow/print', [FinancialReportsController::class, 'printCashFlow'])->name('cash-flow.print');
+        Route::get('/budget-vs-actual', [FinancialReportsController::class, 'budgetVsActual'])->name('budget-vs-actual');
+        Route::get('/budget-vs-actual/print', [FinancialReportsController::class, 'printBudgetVsActual'])->name('budget-vs-actual.print');
     });
 });

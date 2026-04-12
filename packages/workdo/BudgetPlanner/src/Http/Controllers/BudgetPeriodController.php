@@ -97,11 +97,11 @@ class BudgetPeriodController extends Controller
         if(Auth::user()->can('edit-budget-periods')){
             $validated = $request->validated();
 
-            $budget_period->period_name = $validated['period_name'];
+            $budget_period->period_name    = $validated['period_name'];
             $budget_period->financial_year = $validated['financial_year'];
-            $budget_period->start_date = $validated['start_date'];
-            $budget_period->end_date = $validated['end_date'];
-            $budget_period->status = $validated['status'];
+            $budget_period->start_date     = $validated['start_date'];
+            $budget_period->end_date       = $validated['end_date'];
+            // status is not updated here — use approve/active/close endpoints
 
             $budget_period->save();
 
@@ -140,6 +140,18 @@ class BudgetPeriodController extends Controller
         if(Auth::user()->can('active-budget-periods')){
             if ($budget_period->status !== 'approved') {
                 return back()->with('error', __('Only approved budget periods can be active.'));
+            }
+
+            // Prevent two periods from being simultaneously active for the same tenant
+            $alreadyActive = BudgetPeriod::where('created_by', creatorId())
+                ->where('status', 'active')
+                ->where('id', '!=', $budget_period->id)
+                ->exists();
+
+            if ($alreadyActive) {
+                return back()->with('error', __(
+                    'Another budget period is already active. Close it before activating a new one.'
+                ));
             }
 
             $budget_period->update(['status' => 'active']);

@@ -155,7 +155,7 @@ export default function Index() {
                 };
                 return (
                     <span className={`px-2 py-1 rounded-full text-sm ${statusColors[value as keyof typeof statusColors] || statusColors.pending}`}>
-                        {t(value?.charAt(0).toUpperCase() + value?.slice(1) || 'Pending')}
+                        {value ? t(value.charAt(0).toUpperCase() + value.slice(1)) : t('Pending')}
                     </span>
                 );
             }
@@ -398,7 +398,7 @@ export default function Index() {
                                                             termination.status === 'rejected' ? 'bg-red-100 text-red-800' :
                                                             'bg-gray-100 text-gray-800'
                                                         }`}>
-                                                            {t(termination.status?.charAt(0).toUpperCase() + termination.status?.slice(1) || 'Pending')}
+                                                            {termination.status ? t(termination.status.charAt(0).toUpperCase() + termination.status.slice(1)) : t('Pending')}
                                                         </span>
                                                     </div>
                                                 </div>

@@ -308,52 +308,246 @@ class ReportService
         return ($transactions->total_credit ?? 0) - ($transactions->total_debit ?? 0);
     }
 
-    public function getCashFlow($filters = [])
+    // =========================================================================
+    // IPSAS 2 — Cash Flow Statement (Direct Method)
+    //
+    // Strategy:
+    //   1. Identify all cash & bank GL accounts (codes 1000–1099).
+    //   2. Compute opening cash balance at period start.
+    //   3. Pull every posted JE line that touches a cash account in the period.
+    //   4. For each such line, look at the *other* side of the journal entry
+    //      and classify:
+    //        • reference_type 'customer_payment', 'revenue'        → Operating receipt
+    //        • reference_type 'vendor_payment', 'expense'          → Operating payment
+    //        • reference_type 'bank_transfer', 'year_end_close'    → skip (internal)
+    //        • Opposing account in 1100–1999 (non-cash assets)     → Investing
+    //        • Opposing account in 2500–3999 (long-term L + NA)    → Financing
+    //        • Everything else                                      → Operating
+    //   5. Aggregate line amounts into the three activity categories.
+    // =========================================================================
+
+    public function getCashFlow(array $filters = []): array
     {
         $fromDate = $filters['from_date'] ?? date('Y') . '-01-01';
-        $toDate = $filters['to_date'] ?? date('Y') . '-12-31';
+        $toDate   = $filters['to_date']   ?? date('Y') . '-12-31';
+        $creator  = creatorId();
 
-        $cashAccounts = ChartOfAccount::where('created_by', creatorId())
-            ->whereBetween('account_code', [1000, 1099])
-            ->get();
+        // ------------------------------------------------------------------
+        // 1. Cash & bank account IDs (1000–1099)
+        // ------------------------------------------------------------------
+        $cashAccountIds = ChartOfAccount::where('created_by', $creator)
+            ->whereBetween('account_code', ['1000', '1099'])
+            ->pluck('id')
+            ->toArray();
 
-        $beginningCash = 0;
-        foreach ($cashAccounts as $account) {
-            $beginningCash += $this->calculateAccountBalance($account->id, $fromDate);
+        // ------------------------------------------------------------------
+        // 2. Opening cash balance (all cash accounts at start of period)
+        // ------------------------------------------------------------------
+        $openingCash = 0;
+        foreach ($cashAccountIds as $aid) {
+            $openingCash += $this->calculateAccountBalance($aid, $fromDate);
         }
 
-        $operating = $this->getCashFlowByCategory($fromDate, $toDate, 4000, 5999);
-        $investing = $this->getCashFlowByCategory($fromDate, $toDate, 1100, 1999);
-        $financing = $this->getCashFlowByCategory($fromDate, $toDate, 2000, 3999);
+        // ------------------------------------------------------------------
+        // 3. All posted JE lines that hit a cash account during the period
+        // ------------------------------------------------------------------
+        if (empty($cashAccountIds)) {
+            return $this->emptyCashFlowResult($fromDate, $toDate, $openingCash);
+        }
 
-        $netCashFlow = $operating + $investing + $financing;
-        $endingCash = $beginningCash + $netCashFlow;
+        $placeholders = implode(',', array_fill(0, count($cashAccountIds), '?'));
+
+        $cashLines = DB::select("
+            SELECT
+                jei.id,
+                jei.journal_entry_id,
+                jei.account_id,
+                jei.debit_amount,
+                jei.credit_amount,
+                je.reference_type,
+                je.journal_date
+            FROM journal_entry_items jei
+            JOIN journal_entries je ON jei.journal_entry_id = je.id
+            WHERE je.status       = 'posted'
+              AND je.created_by   = ?
+              AND je.journal_date >= ?
+              AND je.journal_date <= ?
+              AND jei.account_id  IN ({$placeholders})
+        ", array_merge([$creator, $fromDate, $toDate], $cashAccountIds));
+
+        // ------------------------------------------------------------------
+        // 4. Classify each cash movement
+        // ------------------------------------------------------------------
+        // reference_type → activity
+        $refTypeMap = [
+            'customer_payment' => 'operating',
+            'revenue'          => 'operating',
+            'vendor_payment'   => 'operating',
+            'expense'          => 'operating',
+            'bank_transfer'    => 'skip',
+            'year_end_close'   => 'skip',
+        ];
+
+        // Buckets: operating_receipts, operating_payments, investing, financing
+        $operatingReceipts  = 0;
+        $operatingPayments  = 0;
+        $investingInflows   = 0;
+        $investingOutflows  = 0;
+        $financingInflows   = 0;
+        $financingOutflows  = 0;
+
+        // Cache of all lines per journal entry to find opposing accounts
+        $jeLineCache = [];
+
+        foreach ($cashLines as $line) {
+            $refType = $line->reference_type ?? 'manual';
+
+            // Skip internal transfers and year-end closing entries
+            if (($refTypeMap[$refType] ?? '') === 'skip') {
+                continue;
+            }
+
+            // Net cash movement: debit to cash = inflow, credit to cash = outflow
+            $netMovement = $line->debit_amount - $line->credit_amount;
+            if (abs($netMovement) < 0.01) {
+                continue;
+            }
+
+            // Determine activity from reference_type first
+            $activity = $refTypeMap[$refType] ?? null;
+
+            if ($activity === null) {
+                // Manual journal or unknown: inspect the opposing account code
+                $activity = $this->classifyByOpposingAccount(
+                    $line->journal_entry_id,
+                    $cashAccountIds,
+                    $jeLineCache,
+                    $creator
+                );
+            }
+
+            switch ($activity) {
+                case 'investing':
+                    if ($netMovement >= 0) {
+                        $investingInflows  += $netMovement;
+                    } else {
+                        $investingOutflows += abs($netMovement);
+                    }
+                    break;
+                case 'financing':
+                    if ($netMovement >= 0) {
+                        $financingInflows  += $netMovement;
+                    } else {
+                        $financingOutflows += abs($netMovement);
+                    }
+                    break;
+                default: // operating
+                    if ($netMovement >= 0) {
+                        $operatingReceipts  += $netMovement;
+                    } else {
+                        $operatingPayments  += abs($netMovement);
+                    }
+            }
+        }
+
+        $netOperating  = $operatingReceipts  - $operatingPayments;
+        $netInvesting  = $investingInflows   - $investingOutflows;
+        $netFinancing  = $financingInflows   - $financingOutflows;
+        $netMovement   = $netOperating + $netInvesting + $netFinancing;
+        $closingCash   = $openingCash + $netMovement;
 
         return [
-            'beginning_cash' => $beginningCash,
-            'operating' => $operating,
-            'investing' => $investing,
-            'financing' => $financing,
-            'net_cash_flow' => $netCashFlow,
-            'ending_cash' => $endingCash,
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
+            'from_date'           => $fromDate,
+            'to_date'             => $toDate,
+            'opening_cash'        => $openingCash,
+
+            'operating_receipts'  => $operatingReceipts,
+            'operating_payments'  => $operatingPayments,
+            'net_operating'       => $netOperating,
+
+            'investing_inflows'   => $investingInflows,
+            'investing_outflows'  => $investingOutflows,
+            'net_investing'       => $netInvesting,
+
+            'financing_inflows'   => $financingInflows,
+            'financing_outflows'  => $financingOutflows,
+            'net_financing'       => $netFinancing,
+
+            'net_movement'        => $netMovement,
+            'closing_cash'        => $closingCash,
+
+            // Kept for backward compat with any existing consumers
+            'beginning_cash'      => $openingCash,
+            'operating'           => $netOperating,
+            'investing'           => $netInvesting,
+            'financing'           => $netFinancing,
+            'net_cash_flow'       => $netMovement,
+            'ending_cash'         => $closingCash,
         ];
     }
 
-    private function getCashFlowByCategory($fromDate, $toDate, $codeStart, $codeEnd)
-    {
-        $accounts = ChartOfAccount::where('created_by', creatorId())
-            ->whereBetween('account_code', [$codeStart, $codeEnd])
-            ->get();
-
-        $total = 0;
-        foreach ($accounts as $account) {
-            $balance = $this->getAccountBalanceForPeriod($account->id, $fromDate, $toDate);
-            $total += $balance;
+    /**
+     * Inspect the opposing (non-cash) account codes in a JE to determine activity.
+     * Caches the full JE line set to avoid repeated queries.
+     */
+    private function classifyByOpposingAccount(
+        int   $journalEntryId,
+        array $cashAccountIds,
+        array &$cache,
+        int   $creator
+    ): string {
+        if (!isset($cache[$journalEntryId])) {
+            $cache[$journalEntryId] = DB::select("
+                SELECT jei.account_id, coa.account_code
+                FROM journal_entry_items jei
+                JOIN chart_of_accounts coa ON jei.account_id = coa.id
+                WHERE jei.journal_entry_id = ?
+                  AND jei.created_by = ?
+            ", [$journalEntryId, $creator]);
         }
 
-        return $total;
+        foreach ($cache[$journalEntryId] as $line) {
+            if (in_array($line->account_id, $cashAccountIds, true)) {
+                continue; // skip the cash line itself
+            }
+            $code = intval($line->account_code);
+            // Non-cash assets (PPE, investments, intangibles): 1100–1999
+            if ($code >= 1100 && $code <= 1999) {
+                return 'investing';
+            }
+            // Long-term liabilities, provisions, net assets: 2500–3999
+            if ($code >= 2500 && $code <= 3999) {
+                return 'financing';
+            }
+        }
+
+        return 'operating';
+    }
+
+    private function emptyCashFlowResult(string $fromDate, string $toDate, float $openingCash): array
+    {
+        return [
+            'from_date'          => $fromDate,
+            'to_date'            => $toDate,
+            'opening_cash'       => $openingCash,
+            'operating_receipts' => 0,
+            'operating_payments' => 0,
+            'net_operating'      => 0,
+            'investing_inflows'  => 0,
+            'investing_outflows' => 0,
+            'net_investing'      => 0,
+            'financing_inflows'  => 0,
+            'financing_outflows' => 0,
+            'net_financing'      => 0,
+            'net_movement'       => 0,
+            'closing_cash'       => $openingCash,
+            'beginning_cash'     => $openingCash,
+            'operating'          => 0,
+            'investing'          => 0,
+            'financing'          => 0,
+            'net_cash_flow'      => 0,
+            'ending_cash'        => $openingCash,
+        ];
     }
 
     public function getExpenseReport($filters = [])

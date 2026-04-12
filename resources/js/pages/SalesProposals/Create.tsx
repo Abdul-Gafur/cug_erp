@@ -62,18 +62,6 @@ export default function Create() {
         } else {
             setAvailableProducts([]);
         }
-
-        // Reset items when warehouse changes
-        setData('items', [{
-            product_id: 0,
-            quantity: 1,
-            unit_price: 0,
-            discount_percentage: 0,
-            discount_amount: 0,
-            tax_percentage: 0,
-            tax_amount: 0,
-            total_amount: 0
-        }]);
     };
 
     const handleSubmit = (e: React.FormEvent) => {

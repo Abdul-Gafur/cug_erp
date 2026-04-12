@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Search, X } from "lucide-react";
 import { Input } from "./input";
 import { Button } from "./button";
