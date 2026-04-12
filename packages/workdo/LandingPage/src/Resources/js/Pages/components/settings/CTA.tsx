@@ -74,7 +74,7 @@ export default function CTA({ data, getSectionData, updateSectionData, updateSec
                         <Textarea
                             value={getSectionData('cta').subtitle || ''}
                             onChange={(e) => updateSectionData('cta', { subtitle: e.target.value })}
-                            placeholder={t('Join thousands of businesses already using ERPGo SaaS to streamline their operations.')}
+                            placeholder={t('Join thousands of businesses already using CUG ERP to streamline their operations.')}
                             rows={3}
                         />
                     </div>

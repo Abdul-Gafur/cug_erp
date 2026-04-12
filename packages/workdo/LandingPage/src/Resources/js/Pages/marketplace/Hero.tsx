@@ -62,9 +62,9 @@ export default function MarketplaceHero({ settings, title: propTitle, subtitle: 
     const sectionData = settings?.config_sections?.sections?.hero || {};
     const variant = sectionData.variant || 'hero1';
     const config = HERO_VARIANTS[variant as keyof typeof HERO_VARIANTS] || HERO_VARIANTS.hero1;
-    
+
     const title = propTitle || sectionData.title || 'Discover Premium Business Packages';
-    const subtitle = propSubtitle || sectionData.subtitle || 'Extend your ERPGo SaaS with powerful premium modules. From advanced CRM to specialized industry solutions.';
+    const subtitle = propSubtitle || sectionData.subtitle || 'Extend your CUG ERP with powerful premium modules. From advanced CRM to specialized industry solutions.';
     const primaryButtonText = primaryButton || sectionData.primary_button_text || 'Browse Packages';
     const primaryButtonLink = sectionData.primary_button_link || '#packages';
     const secondaryButtonText = secondaryButton || sectionData.secondary_button_text || 'View Categories';
@@ -89,17 +89,17 @@ export default function MarketplaceHero({ settings, title: propTitle, subtitle: 
 
     const renderButtons = () => (
         <div className={config.buttons}>
-            <button 
-                className={config.primaryBtn} 
-                style={{ backgroundColor: colors.primary }} 
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.secondary} 
+            <button
+                className={config.primaryBtn}
+                style={{ backgroundColor: colors.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.secondary}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.primary}
                 onClick={() => window.location.href = primaryButtonLink}
             >
                 {primaryButtonText}
                 {config.layout !== 'minimal' && <ArrowRight className="ml-3 h-6 w-6" />}
             </button>
-            <button 
+            <button
                 className={config.secondaryBtn}
                 onClick={() => window.location.href = secondaryButtonLink}
             >
@@ -132,7 +132,7 @@ export default function MarketplaceHero({ settings, title: propTitle, subtitle: 
 
     const renderImage = () => {
         if (!config.showImage || config.layout === 'background') return null;
-        
+
         return (
             <div className={`bg-gray-100 rounded-xl ${config.layout === 'split' || config.layout === 'right-split' ? 'h-96' : 'h-64 mt-12'} flex items-center justify-center overflow-hidden shadow-lg`}>
                 {heroImage ? (

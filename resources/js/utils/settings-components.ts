@@ -25,7 +25,7 @@ const getPackageComponents = (activatedPackages: string[]) => {
 
     activatedPackages.forEach(packageName => {
       Object.entries(modules).forEach(([path, moduleLoader]) => {
-        if (path.includes(`/packages/workdo/${packageName}/`)) {
+        if (path.toLowerCase().includes(`/packages/workdo/${packageName.toLowerCase()}/`)) {
           const match = path.match(/\/([^/]+)\.tsx$/);
           if (match) {
             const componentName = match[1];

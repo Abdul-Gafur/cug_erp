@@ -42,12 +42,12 @@ export default function Benefits({ settings }: BenefitsProps) {
     const sectionData = settings?.config_sections?.sections?.benefits || {};
     const variant = sectionData.variant || 'benefits1';
     const config = BENEFITS_VARIANTS[variant as keyof typeof BENEFITS_VARIANTS] || BENEFITS_VARIANTS.benefits1;
-    
-    const title = sectionData.title || 'Why Choose ERPGo SaaS?';
+
+    const title = sectionData.title || 'Why Choose CUG ERP?';
     const colors = settings?.config_sections?.colors || { primary: '#10b77f', secondary: '#059669', accent: '#f59e0b' };
     const [openAccordion, setOpenAccordion] = useState(0);
     const [activeTab, setActiveTab] = useState(0);
-    
+
     const defaultBenefits = [
         { title: 'Unified Business Ecosystem', description: 'Breakdown silos between your business functions. Our integrated modules for HRM, Accounting, CRM, Projects, and POS work in perfect harmony to provide a unified data source for your entire enterprise.' },
         { title: 'Strategic Human Resource Management', description: 'Transform your workforce management. Efficiently handle recruitment, onboarding, and attendance while ensuring compliant payroll processing. Empower your team with self-service portals and performance tracking.' },
@@ -56,7 +56,7 @@ export default function Benefits({ settings }: BenefitsProps) {
         { title: 'Integrated Sales & CRM Growth Engine', description: 'Supercharge your revenue streams. Track every customer interaction, manage sales pipelines with ease, and streamline retail operations with our lightning-fast POS system to close deals faster.' },
         { title: 'Comprehensive Reporting & Analytics', description: 'Make informed decisions with real-time insights at your fingertips. Generate detailed reports across finance, sales, and operations. Visualize performance trends through intuitive charts to drive strategic growth.' }
     ];
-    
+
     const benefits = sectionData.benefits?.length > 0 ? sectionData.benefits : defaultBenefits;
 
     const renderAccordion = () => (
@@ -136,11 +136,10 @@ export default function Benefits({ settings }: BenefitsProps) {
                     <button
                         key={index}
                         onClick={() => setActiveTab(index)}
-                        className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-                            activeTab === index
+                        className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === index
                                 ? 'text-white rounded-t-lg'
                                 : 'border-transparent text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                         style={activeTab === index ? { backgroundColor: colors.primary, borderColor: colors.primary } : {}}
                     >
                         {benefit.title}

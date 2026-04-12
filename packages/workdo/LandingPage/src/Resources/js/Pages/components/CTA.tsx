@@ -54,9 +54,9 @@ export default function CTA({ settings }: CTAProps) {
     const sectionData = settings?.config_sections?.sections?.cta || {};
     const variant = sectionData.variant || 'cta1';
     const config = CTA_VARIANTS[variant as keyof typeof CTA_VARIANTS] || CTA_VARIANTS.cta1;
-    
+
     const title = sectionData.title || 'Ready to Transform Your Business?';
-    const subtitle = sectionData.subtitle || 'Join thousands of businesses already using ERPGo SaaS to streamline their operations.';
+    const subtitle = sectionData.subtitle || 'Join thousands of businesses already using CUG ERP to streamline their operations.';
     const primaryButton = sectionData.primary_button || 'Start Free Trial';
     const secondaryButton = sectionData.secondary_button || 'Contact Sales';
     const colors = settings?.config_sections?.colors || { primary: '#10b77f', secondary: '#059669', accent: '#f59e0b' };
@@ -66,7 +66,7 @@ export default function CTA({ settings }: CTAProps) {
             return { backgroundColor: colors.primary };
         }
         if (config.layout === 'gradient') {
-            return { 
+            return {
                 background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.accent} 100%)`,
                 backgroundAttachment: 'fixed'
             };
@@ -77,19 +77,18 @@ export default function CTA({ settings }: CTAProps) {
     const renderButtons = () => {
         const primaryLink = sectionData.primary_button_link || '#';
         const secondaryLink = sectionData.secondary_button_link || '#';
-        
+
         return (
             <div className={config.buttons}>
-                <a 
+                <a
                     href={primaryLink}
-                    className={`inline-flex items-center justify-center text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                        config.layout === 'minimal' 
-                            ? 'text-base px-8 py-3.5 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5' 
+                    className={`inline-flex items-center justify-center text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg ${config.layout === 'minimal'
+                            ? 'text-base px-8 py-3.5 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                             : config.layout === 'card'
                                 ? 'text-base px-10 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1'
                                 : 'text-lg'
-                    } ${config.layout === 'split' ? 'shadow-lg hover:shadow-xl' : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'}`}
-                    style={{ 
+                        } ${config.layout === 'split' ? 'shadow-lg hover:shadow-xl' : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'}`}
+                    style={{
                         backgroundColor: config.layout === 'split' || config.layout === 'minimal' || config.layout === 'card' ? colors.primary : undefined,
                         boxShadow: config.layout === 'minimal' || config.layout === 'card' ? `0 4px 14px 0 ${colors.primary}40` : undefined
                     }}
@@ -97,17 +96,16 @@ export default function CTA({ settings }: CTAProps) {
                     {primaryButton}
                     <ArrowRight className={`ml-2 ${config.layout === 'minimal' || config.layout === 'card' ? 'h-5 w-5' : 'h-5 w-5'}`} />
                 </a>
-                <a 
+                <a
                     href={secondaryLink}
-                    className={`inline-flex items-center justify-center border-2 px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 ${
-                        config.layout === 'minimal' 
-                            ? 'text-base px-8 py-3.5 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-lg shadow-sm hover:shadow-md transform hover:-translate-y-0.5' 
+                    className={`inline-flex items-center justify-center border-2 px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 ${config.layout === 'minimal'
+                            ? 'text-base px-8 py-3.5 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-lg shadow-sm hover:shadow-md transform hover:-translate-y-0.5'
                             : config.layout === 'card'
                                 ? 'text-base px-10 py-4 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-xl shadow-sm hover:shadow-lg transform hover:-translate-y-1'
                                 : config.layout === 'split'
                                     ? 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-400 shadow-md hover:shadow-lg'
                                     : 'border-white text-white hover:bg-white hover:text-gray-900 backdrop-blur-sm'
-                    }`}
+                        }`}
                 >
                     {secondaryButton}
                 </a>
@@ -127,7 +125,7 @@ export default function CTA({ settings }: CTAProps) {
                         </div>
                         <div className="relative overflow-hidden rounded-xl shadow-2xl">
                             {sectionData.image ? (
-                                <img 
+                                <img
                                     src={sectionData.image.startsWith('http') ? sectionData.image : getImagePath(sectionData.image)}
                                     alt="CTA Image"
                                     className="w-full h-80 object-cover"

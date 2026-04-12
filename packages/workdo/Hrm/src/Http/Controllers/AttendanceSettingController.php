@@ -11,7 +11,7 @@ class AttendanceSettingController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->can('manage-system-setup') || Auth::user()->can('manage-attendances')) {
+        if (Auth::user()->can('manage-system-setup') || Auth::user()->can('manage-attendances') || Auth::user()->can('manage-hrm')) {
             $globalSettings = getCompanyAllSetting();
             $geofenceRestrictEnabled = $globalSettings['geofence_restrict'] ?? 'off';
             $companyLatitude = $globalSettings['company_latitude'] ?? '';
@@ -31,7 +31,7 @@ class AttendanceSettingController extends Controller
 
     public function store(Request $request)
     {
-        if (Auth::user()->can('manage-system-setup') || Auth::user()->can('manage-attendances')) {
+        if (Auth::user()->can('manage-system-setup') || Auth::user()->can('manage-attendances') || Auth::user()->can('manage-hrm')) {
             $request->validate([
                 'geofence_restrict' => 'required|in:on,off',
                 'company_latitude' => 'nullable|numeric',

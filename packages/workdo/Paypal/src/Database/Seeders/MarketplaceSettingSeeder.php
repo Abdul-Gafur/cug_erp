@@ -13,7 +13,7 @@ class MarketplaceSettingSeeder extends Seeder
         // Get all available screenshots from marketplace directory
         $marketplaceDir = __DIR__ . '/../../marketplace';
         $screenshots = [];
-        
+
         if (File::exists($marketplaceDir)) {
             $files = File::files($marketplaceDir);
             foreach ($files as $file) {
@@ -22,9 +22,9 @@ class MarketplaceSettingSeeder extends Seeder
                 }
             }
         }
-        
+
         sort($screenshots);
-        
+
         MarketplaceSetting::firstOrCreate(['module' => 'Paypal'], [
             'module' => 'Paypal',
             'title' => 'Paypal Module Marketplace',
@@ -33,7 +33,7 @@ class MarketplaceSettingSeeder extends Seeder
                 'sections' => [
                     'hero' => [
                         'variant' => 'hero1',
-                        'title' => 'Paypal Module for ERPGo SaaS',
+                        'title' => 'Paypal Module for CUG ERP',
                         'subtitle' => 'Streamline your paypal workflow with comprehensive tools and automated management.',
                         'primary_button_text' => 'Install Paypal Module',
                         'primary_button_link' => '#install',

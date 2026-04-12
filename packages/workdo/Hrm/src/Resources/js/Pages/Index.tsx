@@ -21,11 +21,11 @@ import {
     Building,
     Briefcase,
     CalendarDays,
-    CreditCard,
     ArrowUpRight,
     ArrowDownRight,
     MoreHorizontal,
-    User as UserIcon
+    User as UserIcon,
+    MapPin
 } from 'lucide-react';
 import { getImagePath } from '@/utils/helpers';
 
@@ -332,6 +332,14 @@ export default function HrmIndex({ message, stats }: HrmProps) {
                                 <Button 
                                     className="w-full justify-start" 
                                     variant="outline"
+                                    onClick={() => window.location.href = route('hrm.attendance-settings.index')}
+                                >
+                                    <MapPin className="h-4 w-4 mr-2" />
+                                    {t('Attendance Settings')}
+                                </Button>
+                                <Button 
+                                    className="w-full justify-start" 
+                                    variant="outline"
                                     onClick={() => window.location.href = route('hrm.attendances.index')}
                                 >
                                     <Clock className="h-4 w-4 mr-2" />
@@ -344,6 +352,14 @@ export default function HrmIndex({ message, stats }: HrmProps) {
                                 >
                                     <Calendar className="h-4 w-4 mr-2" />
                                     {t('Apply for Leave')}
+                                </Button>
+                                <Button 
+                                    className="w-full justify-start" 
+                                    variant="outline"
+                                    onClick={() => window.location.href = route('hrm.attendance-settings.index')}
+                                >
+                                    <MapPin className="h-4 w-4 mr-2" />
+                                    {t('Attendance Settings')}
                                 </Button>
                                 <Button 
                                     className="w-full justify-start" 

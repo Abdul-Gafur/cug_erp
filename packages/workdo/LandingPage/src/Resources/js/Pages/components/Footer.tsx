@@ -73,8 +73,8 @@ export default function Footer({ settings }: FooterProps) {
     const sectionData = settings?.config_sections?.sections?.footer || {};
     const variant = sectionData.variant || 'footer1';
     const config = FOOTER_VARIANTS[variant as keyof typeof FOOTER_VARIANTS] || FOOTER_VARIANTS.footer1;
-    
-    const companyName = settings?.company_name || 'ERPGo SaaS';
+
+    const companyName = settings?.company_name || 'CUG ERP';
     const description = sectionData.description || 'The complete business management solution for modern enterprises.';
     const contactEmail = settings?.contact_email || 'support@erpgosaas.com';
     const phone = settings?.contact_phone || '+1 (555) 123-4567';
@@ -83,7 +83,7 @@ export default function Footer({ settings }: FooterProps) {
     const newsletterButtonText = sectionData.newsletter_button_text || 'Subscribe';
     const copyrightText = sectionData.copyright_text || `© ${new Date().getFullYear()} ${companyName}. All rights reserved.`;
     const colors = settings?.config_sections?.colors || { primary: '#10b77f', secondary: '#059669', accent: '#f59e0b' };
-    
+
     const handleNewsletterSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -129,7 +129,7 @@ export default function Footer({ settings }: FooterProps) {
 
     const getBackgroundStyle = () => {
         if (config.layout === 'modern') {
-            return { 
+            return {
                 background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.accent} 100%)`,
                 backgroundSize: '400% 400%',
                 animation: 'gradientShift 15s ease infinite'
@@ -163,7 +163,7 @@ export default function Footer({ settings }: FooterProps) {
                 </div>
             );
         }
-        
+
         return (
             <div className={config.layout === 'split' ? 'space-y-6' : ''}>
                 <Link href={route('landing.page')} className={config.companyName} style={config.layout !== 'split' ? { color: colors.primary } : {}}>
@@ -178,30 +178,30 @@ export default function Footer({ settings }: FooterProps) {
                 </p>
                 <div className={`space-y-4 ${config.layout === 'centered' ? 'flex flex-col items-center' : ''}`}>
                     <div className="flex items-center">
-                        <Mail 
-                            className={config.layout === 'centered' || config.layout === 'modern' ? 'mr-4' : 'h-5 w-5 mr-3'} 
-                            style={{ 
+                        <Mail
+                            className={config.layout === 'centered' || config.layout === 'modern' ? 'mr-4' : 'h-5 w-5 mr-3'}
+                            style={{
                                 color: colors.primary,
                                 width: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 height: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 minWidth: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 minHeight: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px'
-                            }} 
+                            }}
                         />
                         <span className={`${config.layout === 'split' ? 'text-gray-600' : config.layout === 'centered' || config.layout === 'modern' ? 'text-gray-300 text-lg' : 'text-gray-300'}`}>
                             {contactEmail}
                         </span>
                     </div>
                     <div className="flex items-center">
-                        <Phone 
-                            className={config.layout === 'centered' || config.layout === 'modern' ? 'mr-4' : 'h-5 w-5 mr-3'} 
-                            style={{ 
+                        <Phone
+                            className={config.layout === 'centered' || config.layout === 'modern' ? 'mr-4' : 'h-5 w-5 mr-3'}
+                            style={{
                                 color: colors.primary,
                                 width: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 height: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 minWidth: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px',
                                 minHeight: config.layout === 'centered' || config.layout === 'modern' ? '24px' : '20px'
-                            }} 
+                            }}
                         />
                         <span className={`${config.layout === 'split' ? 'text-gray-600' : config.layout === 'centered' || config.layout === 'modern' ? 'text-gray-300 text-lg' : 'text-gray-300'}`}>
                             {phone}
@@ -333,18 +333,18 @@ export default function Footer({ settings }: FooterProps) {
                     <p className="text-gray-600 text-sm">{newsletterDescription}</p>
                     <div className="flex items-center space-x-3">
                         <form onSubmit={handleNewsletterSubmit} className="flex items-center space-x-3">
-                            <input 
-                                type="email" 
+                            <input
+                                type="email"
                                 placeholder="Enter email"
                                 value={emailInput}
                                 onChange={(e) => setEmailInput(e.target.value)}
                                 disabled={isSubmitting}
                                 className="px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm disabled:opacity-50"
                             />
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50" 
+                                className="text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
                                 style={{ backgroundColor: colors.primary }}
                             >
                                 {isSubmitting ? 'Subscribing...' : newsletterButtonText}
@@ -363,28 +363,26 @@ export default function Footer({ settings }: FooterProps) {
                 </p>
                 <div className={`flex ${config.layout === 'modern' ? 'shadow-2xl' : ''}`}>
                     <form onSubmit={handleNewsletterSubmit} className={`flex ${config.layout === 'modern' ? 'shadow-2xl' : ''} w-full`}>
-                        <input 
-                            type="email" 
+                        <input
+                            type="email"
                             placeholder="Enter email"
                             value={emailInput}
                             onChange={(e) => setEmailInput(e.target.value)}
                             disabled={isSubmitting}
-                            className={`flex-1 w-full px-4 py-3 rounded-l-lg text-sm focus:outline-none transition-all duration-300 disabled:opacity-50 ${
-                                config.layout === 'split' 
+                            className={`flex-1 w-full px-4 py-3 rounded-l-lg text-sm focus:outline-none transition-all duration-300 disabled:opacity-50 ${config.layout === 'split'
                                     ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
                                     : config.layout === 'modern'
                                         ? 'bg-white/20 backdrop-blur-md border border-white/30 text-white placeholder-white/60 focus:border-white focus:bg-white/30'
                                         : 'bg-gray-800 border border-gray-600 text-white placeholder-gray-400 focus:border-blue-500'
-                            }`}
+                                }`}
                         />
-                        <button 
+                        <button
                             type="submit"
                             disabled={isSubmitting}
-                            className={`text-white px-6 py-3 rounded-r-lg font-semibold transition-all duration-300 disabled:opacity-50 ${
-                                config.layout === 'modern' ? 'hover:scale-105 hover:shadow-xl transform' : ''
-                            }`}
-                            style={{ backgroundColor: colors.primary }} 
-                            onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = colors.secondary)} 
+                            className={`text-white px-6 py-3 rounded-r-lg font-semibold transition-all duration-300 disabled:opacity-50 ${config.layout === 'modern' ? 'hover:scale-105 hover:shadow-xl transform' : ''
+                                }`}
+                            style={{ backgroundColor: colors.primary }}
+                            onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = colors.secondary)}
                             onMouseLeave={(e) => !isSubmitting && (e.currentTarget.style.backgroundColor = colors.primary)}
                         >
                             {isSubmitting ? 'Subscribing...' : newsletterButtonText}

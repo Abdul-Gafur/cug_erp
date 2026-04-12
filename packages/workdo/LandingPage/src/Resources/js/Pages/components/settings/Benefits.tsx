@@ -64,10 +64,10 @@ export default function Benefits({ data, getSectionData, updateSectionData, upda
                         <Input
                             value={getSectionData('benefits').title || ''}
                             onChange={(e) => updateSectionData('benefits', { title: e.target.value })}
-                            placeholder={t('Why Choose ERPGo SaaS?')}
+                            placeholder={t('Why Choose CUG ERP?')}
                         />
                     </div>
-                    
+
                     <div className="space-y-4">
                         <Label>{t('Benefits List')}</Label>
                         <Repeater

@@ -12,7 +12,7 @@ class EmailTemplatesSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('type','company')->first();
+        $admin = User::where('type', 'company')->first();
 
         $emailTemplate = [
             'Application Received',
@@ -32,7 +32,7 @@ class EmailTemplatesSeeder extends Seeder
                     "Tracking ID": "tracking_id",
                     "Tracking Link": "tracking_link"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p>مرحبا {candidate_name}،</p><p>شكرا لك على تقديم طلبك لمنصب <strong>{job_title}</strong>!</p><p>لقد تلقينا طلبك بنجاح وهو الآن قيد المراجعة.</p><p><strong>تفاصيل الطلب:</strong></p><ul><li>المنصب: {job_title}</li><li>رقم التتبع: {tracking_id}</li></ul><p>يمكنك تتبع حالة طلبك باستخدام رقم التتبع على: {tracking_link}</p><p>سنراجع طلبك ونعاود الاتصال بك قريبا.</p><p>شكرا لاهتمامك بـ {company_name}.</p>',
                     'da' => '<p>Hej {candidate_name},</p><p>Tak for din ansøgning til stillingen som <strong>{job_title}</strong>!</p><p>Vi har modtaget din ansøgning og den er nu under behandling.</p><p><strong>Ansøgningsdetaljer:</strong></p><ul><li>Stilling: {job_title}</li><li>Sporings-ID: {tracking_id}</li></ul><p>Du kan spore status på din ansøgning ved hjælp af dit sporings-ID på: {tracking_link}</p><p>Vi vil gennemgå din ansøgning og vende tilbage til dig snart.</p><p>Tak for din interesse i {company_name}.</p>',
                     'de' => '<p>Hallo {candidate_name},</p><p>Vielen Dank für Ihre Bewerbung für die Position <strong>{job_title}</strong>!</p><p>Wir haben Ihre Bewerbung erfolgreich erhalten und sie wird nun geprüft.</p><p><strong>Bewerbungsdetails:</strong></p><ul><li>Position: {job_title}</li><li>Verfolgungs-ID: {tracking_id}</li></ul><p>Sie können den Status Ihrer Bewerbung mit Ihrer Verfolgungs-ID verfolgen unter: {tracking_link}</p><p>Wir werden Ihre Bewerbung prüfen und uns bald bei Ihnen melden.</p><p>Vielen Dank für Ihr Interesse an {company_name}.</p>',
@@ -84,21 +84,18 @@ class EmailTemplatesSeeder extends Seeder
 
         ];
 
-        foreach($emailTemplate as $eTemp)
-        {
-            $table = EmailTemplate::where('name',$eTemp)->where('module_name','Recruitment')->exists();
-            if(!$table)
-            {
+        foreach ($emailTemplate as $eTemp) {
+            $table = EmailTemplate::where('name', $eTemp)->where('module_name', 'Recruitment')->exists();
+            if (!$table) {
                 $emailtemplate = EmailTemplate::create([
                     'name' => $eTemp,
-                    'from' => !empty(env('APP_NAME')) ? env('APP_NAME') : 'ERPGo SaaS',
+                    'from' => !empty(env('APP_NAME')) ? env('APP_NAME') : 'CUG ERP',
                     'module_name' => 'Recruitment',
                     'created_by' => $admin->id,
                     'creator_id' => $admin->id,
                 ]);
 
-                foreach($defaultTemplate[$eTemp]['lang'] as $lang => $content)
-                {
+                foreach ($defaultTemplate[$eTemp]['lang'] as $lang => $content) {
                     EmailTemplateLang::create([
                         'parent_id' => $emailtemplate->id,
                         'lang' => $lang,

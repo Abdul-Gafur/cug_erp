@@ -58,8 +58,8 @@ export default function Hero({ settings }: HeroProps) {
     const sectionData = settings?.config_sections?.sections?.hero || {};
     const variant = sectionData.variant || 'hero1';
     const config = HERO_VARIANTS[variant as keyof typeof HERO_VARIANTS] || HERO_VARIANTS.hero1;
-    
-    const title = sectionData.title || 'Transform Your Business with ERPGo SaaS';
+
+    const title = sectionData.title || 'Transform Your Business with CUG ERP';
     const subtitle = sectionData.subtitle || 'The complete all-in-one business management solution that combines ERP, Accounting, CRM, POS, HRM, and Project Management into a single powerful platform.';
     const primaryButtonText = sectionData.primary_button_text || 'Start Free Trial';
     const primaryButtonLink = sectionData.primary_button_link || route('register');
@@ -85,17 +85,17 @@ export default function Hero({ settings }: HeroProps) {
 
     const renderButtons = () => (
         <div className={config.buttons}>
-            <button 
-                className={config.primaryBtn} 
-                style={{ backgroundColor: colors.primary }} 
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.secondary} 
+            <button
+                className={config.primaryBtn}
+                style={{ backgroundColor: colors.primary }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.secondary}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.primary}
                 onClick={() => window.location.href = primaryButtonLink}
             >
                 {primaryButtonText}
                 {config.layout !== 'minimal' && <ArrowRight className="ml-3 h-6 w-6" />}
             </button>
-            <button 
+            <button
                 className={config.secondaryBtn}
                 onClick={() => window.location.href = secondaryButtonLink}
             >
@@ -128,7 +128,7 @@ export default function Hero({ settings }: HeroProps) {
 
     const renderImage = () => {
         if (!config.showImage || config.layout === 'background') return null;
-        
+
         return (
             <div className={`bg-gray-100 rounded-xl ${config.layout === 'split' || config.layout === 'right-split' ? '' : 'mt-12'} flex items-center justify-center overflow-hidden shadow-[0px_2px_4px_0px_rgba(14,30,37,0.12),0px_2px_16px_0px_rgba(14,30,37,0.32)]`}>
                 {heroImage ? (

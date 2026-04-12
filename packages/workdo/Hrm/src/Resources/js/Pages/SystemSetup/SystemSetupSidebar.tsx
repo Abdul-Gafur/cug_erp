@@ -148,7 +148,7 @@ export default function SystemSetupSidebar({ activeItem, onSectionChange }: Syst
             label: t('Attendance Settings'),
             icon: MapPin,
             route: 'hrm.attendance-settings.index',
-            permission: 'manage-attendances'
+            permission: 'manage-hrm'
         },
     ];
 

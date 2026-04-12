@@ -141,6 +141,11 @@ export const hrmCompanyMenu = (t: (key: string) => string) => [
                 href: route('hrm.branches.index'),
                 permission: 'manage-hrm',
             },
+            {
+                title: t('Attendance Settings'),
+                href: route('hrm.attendance-settings.index'),
+                permission: 'manage-hrm',
+            },
 
         ],
     },

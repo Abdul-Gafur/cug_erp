@@ -40,10 +40,10 @@ export default function MarketplaceNotFound({ landingPageSettings }: Marketplace
             '--color-secondary': colorScheme.secondary,
             '--color-accent': colorScheme.accent
         } as React.CSSProperties}>
-            <Head title="Package Not Found - ERPGo SaaS Marketplace" />
-            
+            <Head title="Package Not Found - CUG ERP Marketplace" />
+
             <Header key="header" settings={updatedLandingPageSettings} />
-            
+
             <section className="py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <div className="max-w-md mx-auto">
@@ -65,7 +65,7 @@ export default function MarketplaceNotFound({ landingPageSettings }: Marketplace
                     </div>
                 </div>
             </section>
-            
+
             <Footer key="footer" settings={updatedLandingPageSettings} />
 
             <CookieConsent settings={adminAllSetting || {}} />

@@ -23,8 +23,13 @@ const getPackageSettingsItems = (userRoles: string[], activatedPackages: string[
 
     (Array.isArray(activatedPackages) ? activatedPackages : []).forEach(packageName => {
         const settingPath = `../../../packages/workdo/${packageName}/src/Resources/js/settings/${settingType}.ts`;
-        const module = allModules[settingPath] as any;
-
+        
+        // Find module using case-insensitive path check
+        const moduleEntry = Object.entries(allModules).find(([path]) => 
+            path.toLowerCase().includes(`/packages/workdo/${packageName.toLowerCase()}/src/resources/js/settings/${settingType.toLowerCase()}.ts`)
+        );
+        const module = moduleEntry ? moduleEntry[1] : null;
+        
         if (module) {
             Object.values(module).forEach((item: any) => {
                 const result = typeof item === 'function' ? item(t) : item;

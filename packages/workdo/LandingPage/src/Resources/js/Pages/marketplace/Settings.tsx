@@ -36,7 +36,7 @@ interface SettingsProps {
 
 export default function Settings({ settings, activeModules, selectedModule }: SettingsProps) {
     const { t } = useTranslation();
-    const { auth } = usePage<{auth: {user: any}}>().props;
+    const { auth } = usePage<{ auth: { user: any } }>().props;
 
     if (!auth.user?.permissions?.includes('manage-marketplace-settings')) {
         return (
@@ -217,24 +217,24 @@ export default function Settings({ settings, activeModules, selectedModule }: Se
                                     module.name.toLowerCase().includes(moduleSearchTerm.toLowerCase())
                                 )
                                 .map((module, index) => (
-                                <Button
-                                    key={index}
-                                    variant={activeModule === module.module ? "default" : "ghost"}
-                                    className="w-full justify-start gap-2"
-                                    onClick={() => {
-                                        setActiveModule(module.module);
-                                        setActiveModuleName(module.name);
-                                        router.get(route('marketplace.settings'), { module: module.module }, { preserveState: false });
-                                    }}
-                                >
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-sm">{module.name}</span>
-                                    </div>
-                                    {activeModule === module.module && (
-                                        <Edit3 className="h-3 w-3 ml-auto" />
-                                    )}
-                                </Button>
-                            ))}
+                                    <Button
+                                        key={index}
+                                        variant={activeModule === module.module ? "default" : "ghost"}
+                                        className="w-full justify-start gap-2"
+                                        onClick={() => {
+                                            setActiveModule(module.module);
+                                            setActiveModuleName(module.name);
+                                            router.get(route('marketplace.settings'), { module: module.module }, { preserveState: false });
+                                        }}
+                                    >
+                                        <div className="flex flex-col items-start">
+                                            <span className="text-sm">{module.name}</span>
+                                        </div>
+                                        {activeModule === module.module && (
+                                            <Edit3 className="h-3 w-3 ml-auto" />
+                                        )}
+                                    </Button>
+                                ))}
                         </CardContent>
                     </Card>
 
@@ -268,11 +268,10 @@ export default function Settings({ settings, activeModules, selectedModule }: Se
                                                     setActiveTab(tab.key as any);
                                                     setActiveSection(tab.sections[0]);
                                                 }}
-                                                className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-                                                    activeTab === tab.key
+                                                className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === tab.key
                                                         ? 'text-white rounded-t-lg'
                                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                                                }`}
+                                                    }`}
                                                 style={activeTab === tab.key ? {
                                                     backgroundColor: 'hsl(var(--primary))',
                                                     borderColor: 'hsl(var(--primary))'
@@ -364,7 +363,7 @@ export default function Settings({ settings, activeModules, selectedModule }: Se
                                                     <Input
                                                         value={getSectionData('hero').subtitle || ''}
                                                         onChange={(e) => updateSectionData('hero', 'subtitle', e.target.value)}
-                                                        placeholder={t('Extend your ERPGo SaaS with powerful premium modules...')}
+                                                        placeholder={t('Extend your CUG ERP with powerful premium modules...')}
                                                     />
                                                 </div>
                                             </div>
@@ -441,18 +440,18 @@ export default function Settings({ settings, activeModules, selectedModule }: Se
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium">{t('Section Title')}</label>
                                                     <Input
-                                                value={getSectionData('modules').title || ''}
-                                                onChange={(e) => updateSectionData('modules', 'title', e.target.value)}
-                                                placeholder={t('Premium Packages')}
-                                            />
+                                                        value={getSectionData('modules').title || ''}
+                                                        onChange={(e) => updateSectionData('modules', 'title', e.target.value)}
+                                                        placeholder={t('Premium Packages')}
+                                                    />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium">{t('Section Subtitle')}</label>
                                                     <Input
-                                                value={getSectionData('modules').subtitle || ''}
-                                                onChange={(e) => updateSectionData('modules', 'subtitle', e.target.value)}
-                                                placeholder={t('Discover powerful extensions...')}
-                                            />
+                                                        value={getSectionData('modules').subtitle || ''}
+                                                        onChange={(e) => updateSectionData('modules', 'subtitle', e.target.value)}
+                                                        placeholder={t('Discover powerful extensions...')}
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
@@ -785,9 +784,8 @@ export default function Settings({ settings, activeModules, selectedModule }: Se
                                                                             section_order: currentOrder
                                                                         });
                                                                     }}
-                                                                    className={`flex items-center gap-3 p-4 border rounded-lg transition-all cursor-move ${
-                                                                        isEnabled ? 'bg-white border-gray-200 hover:shadow-md' : 'bg-gray-50 border-gray-300 opacity-60'
-                                                                    }`}
+                                                                    className={`flex items-center gap-3 p-4 border rounded-lg transition-all cursor-move ${isEnabled ? 'bg-white border-gray-200 hover:shadow-md' : 'bg-gray-50 border-gray-300 opacity-60'
+                                                                        }`}
                                                                 >
                                                                     <GripVertical className="h-5 w-5 text-gray-400" />
                                                                     <div className="flex-1 flex items-center justify-between">

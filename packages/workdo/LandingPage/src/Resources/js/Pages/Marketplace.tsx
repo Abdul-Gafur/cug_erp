@@ -51,7 +51,7 @@ export default function Marketplace({ packages = [], settings, landingPageSettin
     const getSectionData = (key: string) => {
         return settings?.config_sections?.sections?.[key] || {};
     };
-    
+
     const favicon = getAdminSetting('favicon');
     const faviconUrl = favicon ? getImagePath(favicon) : null;
     const { adminAllSetting, auth } = usePage().props as any;
@@ -59,15 +59,15 @@ export default function Marketplace({ packages = [], settings, landingPageSettin
     const isSectionVisible = (key: string) => {
         return settings?.config_sections?.section_visibility?.[key] !== false;
     };
-    
-    const sectionOrder = settings?.config_sections?.section_order || 
+
+    const sectionOrder = settings?.config_sections?.section_order ||
         ['header', 'hero', 'modules', 'dedication', 'screenshots', 'why_choose', 'cta', 'footer'];
-    
+
     const renderSection = (sectionKey: string) => {
         if (!isSectionVisible(sectionKey)) return null;
-        
+
         const sectionData = getSectionData(sectionKey);
-        
+
         switch (sectionKey) {
             case 'header':
                 return <Header key={sectionKey} settings={updatedLandingPageSettings} />;
@@ -103,10 +103,10 @@ export default function Marketplace({ packages = [], settings, landingPageSettin
             '--color-secondary': colorScheme.secondary,
             '--color-accent': colorScheme.accent
         } as React.CSSProperties}>
-            <Head title={`${settings?.title || 'ERPGo SaaS Marketplace'} - Premium Packages`}>
+            <Head title={`${settings?.title || 'CUG ERP Marketplace'} - Premium Packages`}>
                 {faviconUrl && <link rel="icon" type="image/x-icon" href={faviconUrl} />}
             </Head>
-            
+
             {sectionOrder.map(sectionKey => renderSection(sectionKey))}
 
             <CookieConsent settings={adminAllSetting || {}} />

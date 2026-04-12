@@ -25,7 +25,7 @@ class LandingPageSettingSeeder extends Seeder
     private function getDefaultSettings(): array
     {
         return [
-            'company_name' => 'ERPGo SaaS',
+            'company_name' => 'CUG ERP',
             'contact_email' => 'support@erpgosaas.com',
             'contact_phone' => '+1 (555) 123-4567',
             'contact_address' => '123 Business Ave, City, State 12345',
@@ -49,17 +49,17 @@ class LandingPageSettingSeeder extends Seeder
             'hero' => [
                 'variant' => 'hero1',
                 'title' => 'The Complete Cloud ERP Platform for Modern Enterprises',
-                'subtitle' => 'Streamline your entire business lifecycle, from finance to operations, with ERPGo SaaS. One platform, infinite possibilities.',
+                'subtitle' => 'Streamline your entire business lifecycle, from finance to operations, with CUG ERP. One platform, infinite possibilities.',
                 'primary_button_text' => 'Start Free Trial',
                 'primary_button_link' => route('register'),
                 'secondary_button_text' => 'Login',
                 'secondary_button_link' => route('login'),
-                'highlight_text' => 'ERPGo SaaS',
+                'highlight_text' => 'CUG ERP',
                 'image' => 'packages/workdo/LandingPage/src/Resources/assets/img/hero.png'
             ],
             'header' => [
                 'variant' => 'header1',
-                'company_name' => 'ERPGo SaaS',
+                'company_name' => 'CUG ERP',
                 'cta_text' => 'Get Started',
                 'enable_pricing_link' => true,
                 'navigation_items' => [
@@ -125,7 +125,7 @@ class LandingPageSettingSeeder extends Seeder
             ],
             'benefits' => [
                 'variant' => 'benefits1',
-                'title' => 'Why Choose ERPGo SaaS?',
+                'title' => 'Why Choose CUG ERP?',
                 'benefits' => [
                     ['title' => 'Unified Business Ecosystem', 'description' => 'Breakdown silos between your business functions. Our integrated modules for HRM, Accounting, CRM, Projects, and POS work in perfect harmony to provide a unified data source for your entire enterprise.'],
                     ['title' => 'Strategic Human Resource Management', 'description' => 'Transform your workforce management. Efficiently handle recruitment, onboarding, and attendance while ensuring compliant payroll processing. Empower your team with self-service portals and performance tracking.'],
@@ -152,7 +152,7 @@ class LandingPageSettingSeeder extends Seeder
             'cta' => [
                 'variant' => 'cta1',
                 'title' => 'Ready to Transform Your Business?',
-                'subtitle' => 'Join thousands of businesses already using ERPGo SaaS to streamline their operations.',
+                'subtitle' => 'Join thousands of businesses already using CUG ERP to streamline their operations.',
                 'primary_button' => 'Start Free Trial',
                 'secondary_button' => 'Contact Sales'
             ],

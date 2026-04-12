@@ -13,7 +13,7 @@ class MarketplaceSettingSeeder extends Seeder
         // Get all available screenshots from marketplace directory
         $marketplaceDir = __DIR__ . '/../../marketplace';
         $screenshots = [];
-        
+
         if (File::exists($marketplaceDir)) {
             $files = File::files($marketplaceDir);
             foreach ($files as $file) {
@@ -22,9 +22,9 @@ class MarketplaceSettingSeeder extends Seeder
                 }
             }
         }
-        
+
         sort($screenshots);
-        
+
         MarketplaceSetting::firstOrCreate(['module' => 'Timesheet'], [
             'module' => 'Timesheet',
             'title' => 'Timesheet Module Marketplace',
@@ -33,7 +33,7 @@ class MarketplaceSettingSeeder extends Seeder
                 'sections' => [
                     'hero' => [
                         'variant' => 'hero1',
-                        'title' => 'Timesheet Module for ERPGo SaaS',
+                        'title' => 'Timesheet Module for CUG ERP',
                         'subtitle' => 'Track time efficiently with multiple entry methods including manual entry, project-based tracking, and clock in/out functionality.',
                         'primary_button_text' => 'Install Timesheet Module',
                         'primary_button_link' => '#install',

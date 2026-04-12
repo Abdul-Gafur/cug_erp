@@ -13,7 +13,7 @@ class MarketplaceSettingSeeder extends Seeder
         // Get all available screenshots from marketplace directory
         $marketplaceDir = __DIR__ . '/../../marketplace';
         $screenshots = [];
-        
+
         if (File::exists($marketplaceDir)) {
             $files = File::files($marketplaceDir);
             foreach ($files as $file) {
@@ -22,9 +22,9 @@ class MarketplaceSettingSeeder extends Seeder
                 }
             }
         }
-        
+
         sort($screenshots);
-        
+
         MarketplaceSetting::firstOrCreate(['module' => 'GoogleCaptcha'], [
             'module' => 'GoogleCaptcha',
             'title' => 'Google reCAPTCHA Module',
@@ -33,7 +33,7 @@ class MarketplaceSettingSeeder extends Seeder
                 'sections' => [
                     'hero' => [
                         'variant' => 'hero1',
-                        'title' => 'Google reCAPTCHA Module for ERPGo SaaS',
+                        'title' => 'Google reCAPTCHA Module for CUG ERP',
                         'subtitle' => 'Secure your forms and prevent spam with Google reCAPTCHA v2 and v3 integration.',
                         'primary_button_text' => 'Install reCAPTCHA Module',
                         'primary_button_link' => '#install',

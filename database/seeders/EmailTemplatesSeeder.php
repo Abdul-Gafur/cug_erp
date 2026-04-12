@@ -15,7 +15,7 @@ class EmailTemplatesSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::where('type','superadmin')->first();
+        $admin = User::where('type', 'superadmin')->first();
 
         $emailTemplate = [
             'New User',
@@ -40,7 +40,7 @@ class EmailTemplatesSeeder extends Seeder
                     "Email": "email",
                     "Password": "password"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p>مرحبا،&nbsp;<br>مرحبا بك في {app_name}.</p><p><b>البريد الإلكتروني </b>: {email}<br><b>كلمه السر</b> : {password}</p><p>{app_url}</p><p>شكر،<br>{company_name}</p><p>{app_name}</p>',
                     'da' => '<p>Hej,&nbsp;<br>Velkommen til {app_name}.</p><p><b>E-mail </b>: {email}<br><b>Adgangskode</b> : {password}</p><p>{app_url}</p><p>Tak,<br>{company_name}</p><p>{app_name}</p>',
                     'de' => '<p>Hallo,&nbsp;<br>Willkommen zu {app_name}.</p><p><b>Email </b>: {email}<br><b>Passwort</b> : {password}</p><p>{app_url}</p><p>Vielen Dank,<br>{company_name}</p><p>{app_name}</p>',
@@ -74,7 +74,7 @@ class EmailTemplatesSeeder extends Seeder
                     'zh' => '<p>您好，<br />欢迎使用 {app_name}</p><p><strong>邮箱 </strong>: {email}<br /><strong>密码</strong> : {password}</p><p>{app_url}</p><p>谢谢,<br />{company_name}</p><p>{app_name}</p>',
                 ],
             ],
-             'Customer Invoice Send' => [
+            'Customer Invoice Send' => [
                 'subject' => 'Customer Invoice Send',
                 'variables' => '{
                     "App Name": "app_name",
@@ -85,7 +85,7 @@ class EmailTemplatesSeeder extends Seeder
                     "Download Invoice ": "invoice_url",
                     "Pay Invoice" : "pay_invoice_url"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p>مرحبا ، {invoice_name}</p>
                     <p>مرحبا بك في {app_name}</p>
                     <p>أتمنى أن يجدك هذا البريد الإلكتروني جيدا برجاء الرجوع الى رقم الفاتورة الملحقة {invoice_number} للخدمة / الخدمة.</p>
@@ -715,7 +715,7 @@ class EmailTemplatesSeeder extends Seeder
                     "proposal Number": "proposal_number",
                     "proposal Url": "proposal_url"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p>مرحبا ، {proposal_name}</p>
                     <p>أتمنى أن يجدك هذا البريد الإلكتروني جيدا برجاء الرجوع الى رقم الاقتراح المرفق {proposal_number} للمنتج / الخدمة.</p>
                     <p>اضغط ببساطة على الاختيار بأسفل</p>
@@ -879,7 +879,7 @@ class EmailTemplatesSeeder extends Seeder
                 ],
             ],
             'New Helpdesk Ticket' =>
-            [
+                [
                     'subject' => 'New Helpdesk Ticket',
                     'variables' => '{
                             "App Name": "app_name",
@@ -891,99 +891,99 @@ class EmailTemplatesSeeder extends Seeder
                             "Password": "password",
                             "Ticket Url": "ticket_url"
                       }',
-                      'lang' => [
-                            'ar' => '<p>مرحبا بك<br />الى {app_name}</p>
+                    'lang' => [
+                        'ar' => '<p>مرحبا بك<br />الى {app_name}</p>
                             <p><strong>البريد الالكتروني : { email } </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>كود بطاقة طلب الخدمة: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">تحقق من صلاحية</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Thanks,<br />{company_name}</p><p>{app_name}</p>',
-                            'da' => '<p>Velkommen<br />to {app_name}</p>
+                        'da' => '<p>Velkommen<br />to {app_name}</p>
                             <p><strong>E-mail : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Ticket ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validerer din</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Tak,<br />{company_name}</p><p>{app_name}</p>',
-                            'de' => '<p>Begrüßung<br />to {app_name}</p>
+                        'de' => '<p>Begrüßung<br />to {app_name}</p>
                             <p><strong>Email : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Ticket ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Überprüfen von</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Vielen Dank,<br />{company_name}</p><p>{app_name}</p>',
-                            'en' => '<p>Welcome<br />to {app_name}</p>
+                        'en' => '<p>Welcome<br />to {app_name}</p>
                             <p><strong>Email : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Ticket ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validating your</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Thanks,<br />{company_name}</p><p>{app_name}</p>',
-                            'es' => '<p>Bienvenido<br />to {app_name}</p>
+                        'es' => '<p>Bienvenido<br />to {app_name}</p>
                             <p><strong>Correo electrónico : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID de ticket: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validación de la</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Gracias,<br />{company_name}</p><p>{app_name}</p>',
-                            'fr' => '<p>Bienvenue<br />to {app_name}</p>
+                        'fr' => '<p>Bienvenue<br />to {app_name}</p>
                             <p><strong>Courrier électronique : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID de ticket: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validation de votre</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Merci,<br />{company_name}</p><p>{app_name}</p>',
-                            'it' => '<p>Benvenuto<br />to {app_name}</p>
+                        'it' => '<p>Benvenuto<br />to {app_name}</p>
                             <p><strong>Email : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID ticket: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Convalida del tuo</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Grazie,<br />{company_name}</p><p>{app_name}</p>',
-                            'ja' => '<p>ようこそ<br />to {app_name}</p>
+                        'ja' => '<p>ようこそ<br />to {app_name}</p>
                             <p><strong>E メール: {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>チケット ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">検証しています</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>ありがと,<br />{company_name}</p><p>{app_name}</p>',
-                            'nl' => '<p>Welkom<br />to {app_name}</p>
+                        'nl' => '<p>Welkom<br />to {app_name}</p>
                             <p><strong>E-mail : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Ticket-ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Bezig met valideren van uw</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Bedankt,<br />{company_name}</p><p>{app_name}</p>',
-                            'pl' => '<p>Powitanie<br />to {app_name}</p>
+                        'pl' => '<p>Powitanie<br />to {app_name}</p>
                             <p><strong>Adres e-mail : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Id. zgłoszenia: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Sprawdzanie poprawności</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Dziękujemy,<br />{company_name}</p><p>{app_name}</p>',
-                            'ru' => '<p>Приветствие<br />to {app_name}</p>
+                        'ru' => '<p>Приветствие<br />to {app_name}</p>
                             <p><strong>Электронная почта : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID паспорта: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Проверка правильности</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Спасибо,<br />{company_name}</p><p>{app_name}</p>',
-                            'pt' => '<p>Bem-vindo<br />to {app_name}</p>
+                        'pt' => '<p>Bem-vindo<br />to {app_name}</p>
                             <p><strong>E-mail : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID do chamado: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validando seu</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Obrigado,<br />{company_name}</p><p>{app_name}</p>',
-                            'tr'=>'<p>Hoş Geldiniz<br />to {app_name}</p>
+                        'tr' => '<p>Hoş Geldiniz<br />to {app_name}</p>
                             <p><strong>Eposta : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Bildirim Formu Tanıtıcısı: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Sizin</strong> </a></span></p>
                                     </strong> </a></span></span></p>
                             <p>{app_url}</p>
                             <p>Teşekkürler,<br />{company_name}</p><p>{app_name}</p>',
-                            'pt-BR' => '<p>Bem-vindo<br />ao {app_name}</p>
+                        'pt-BR' => '<p>Bem-vindo<br />ao {app_name}</p>
                             <p><strong>Email : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>ID do Ticket: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Validando seu</strong> </a></span></p>
@@ -991,7 +991,7 @@ class EmailTemplatesSeeder extends Seeder
                             <p>{app_url}</p>
                             <p>Obrigado,<br />{company_name}</p><p>{app_name}</p>',
 
-                            'he' => '<p>ברוך הבא<br />ל-{app_name}</p>
+                        'he' => '<p>ברוך הבא<br />ל-{app_name}</p>
                             <p><strong>אימייל : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>מספר כרטיס: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">מאמת את שלך</strong> </a></span></p>
@@ -999,7 +999,7 @@ class EmailTemplatesSeeder extends Seeder
                             <p>{app_url}</p>
                             <p>תודה,<br />{company_name}</p><p>{app_name}</p>',
 
-                            'tr' => '<p>Hoş geldiniz<br />{app_name}\'e</p>
+                        'tr' => '<p>Hoş geldiniz<br />{app_name}\'e</p>
                             <p><strong>E-posta : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>Bilet ID: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">Doğruluyorsunuz</strong> </a></span></p>
@@ -1007,7 +1007,7 @@ class EmailTemplatesSeeder extends Seeder
                             <p>{app_url}</p>
                             <p>Teşekkürler,<br />{company_name}</p><p>{app_name}</p>',
 
-                            'zh' => '<p>欢迎<br />来到 {app_name}</p>
+                        'zh' => '<p>欢迎<br />来到 {app_name}</p>
                             <p><strong>邮箱 : {email} </strong><strong><br /><strong><strong>
                             <p><strong><strong><strong> </strong>工单编号: {ticket_id}<br />
                                 <p style="text-align: center;" align="center"><span style="font-size: 18pt;"><a style="background: #6676ef; color: #ffffff; font-family: "Open Sans", Helvetica, Arial, sans-serif; font-weight: normal; line-height: 120%; margin: 0px; text-decoration: none; text-transform: none;" href="{ticket_url}" target="_blank" rel="noopener"> <strong style="color: white; font-weight: bold; text: white;">正在验证您的</strong> </a></span></p>
@@ -1015,7 +1015,7 @@ class EmailTemplatesSeeder extends Seeder
                             <p>{app_url}</p>
                             <p>谢谢,<br />{company_name}</p><p>{app_name}</p>',
                     ],
-            ],
+                ],
             'New Helpdesk Ticket Reply' => [
                 'subject' => 'Helpdesk Ticket Reply',
                 'variables' => '{
@@ -1039,7 +1039,7 @@ class EmailTemplatesSeeder extends Seeder
                     'pl' => '<p>Witaj, Witamy w aplikacji {app_name }.</p><p>&nbsp;</p><p>{ticket_name }</p><p>{ticket_id }</p><p>&nbsp;</p><p>Opis: {reply_description }</p><p>&nbsp;</p><p>Dziękuję,</p><p>{company_name}</p><p>{app_name}</p>',
                     'ru' => '<p>Здравствуйте, Добро пожаловать в {app_name}.</p><p>&nbsp;</p><p>Witaj, Witamy w aplikacji {app_name }.</p><p>&nbsp;</p><p>{ticket_name }</p><p>{ticket_id }</p><p>&nbsp;</p><p>Opis: {reply_description }</p><p>&nbsp;</p><p>Dziękuję,</p><p>{company_name}</p><p>{app_name}</p>',
                     'pt' => '<p>Ol&aacute;, Bem-vindo a {app_name}.</p><p>&nbsp;</p><p>{ticket_name}</p><p>{ticket_id}</p><p>&nbsp;</p><p>Descri&ccedil;&atilde;o: {reply_description}</p><p>&nbsp;</p><p>Obrigado,</p><p>{company_name}</p><p>{app_name}</p>',
-                    'tr'=>'<p>Merhaba, &nbsp;<br />{app_name} olanağına hoş geldiniz.</p><p>{ ticket_name }</p><p>{ ticket_id }</p><p><strong>Açıklama</strong> : { reply_description }</p><p>Teşekkürler,<br />{company_name}</p><p>{app_name}</p>',
+                    'tr' => '<p>Merhaba, &nbsp;<br />{app_name} olanağına hoş geldiniz.</p><p>{ ticket_name }</p><p>{ ticket_id }</p><p><strong>Açıklama</strong> : { reply_description }</p><p>Teşekkürler,<br />{company_name}</p><p>{app_name}</p>',
                     'pt-BR' => '<p>Olá,&nbsp;<br />Bem-vindo ao {app_name}.</p><p>{ticket_name}</p><p>{ticket_id}</p><p><strong>Descrição</strong> : {reply_description}</p><p>Obrigado,<br />{app_name}</p>',
                     'he' => '<p>שלום,&nbsp;<br />ברוך הבא ל-{app_name}.</p><p>{ticket_name}</p><p>{ticket_id}</p><p><strong>תיאור</strong> : {reply_description}</p><p>תודה,<br />{app_name}</p>',
                     'tr' => '<p>Merhaba,&nbsp;<br />{app_name}\'e hoş geldiniz.</p><p>{ticket_name}</p><p>{ticket_id}</p><p><strong>Açıklama</strong> : {reply_description}</p><p>Teşekkürler,<br />{app_name}</p>',
@@ -1056,7 +1056,7 @@ class EmailTemplatesSeeder extends Seeder
                     "Purchase Number": "purchase_number",
                     "purchase_url": "purchase_url"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p style="line-height: 28px; font-family: Nunito,;"><span style="font-family: sans-serif;">مرحبا ، {purchase_name}</span></p>
                     <p style="line-height: 28px; font-family: Nunito,;"><span style="font-family: sans-serif;">مرحبا بك في {app_name}</span></p>
                     <p style="line-height: 28px; font-family: Nunito,;"><span style="font-family: sans-serif;">أتمنى أن يجدك هذا البريد الإلكتروني جيدا ! ! برجاء الرجوع الى رقم الفاتورة الملحقة {purchase_number} للحصول على المنتج / الخدمة.</span></p>
@@ -1231,7 +1231,7 @@ class EmailTemplatesSeeder extends Seeder
                     "Payment Date": "payment_date",
                     "Payment Method": "payment_method"
                   }',
-                  'lang' => [
+                'lang' => [
                     'ar' => '<p>مرحبا ، {payment_name}</p>
                     <p>&nbsp;</p>
                     <p>مرحبا بك في {app_name}</p>
@@ -1418,32 +1418,29 @@ class EmailTemplatesSeeder extends Seeder
             ],
         ];
 
-        foreach($emailTemplate as $eTemp)
-        {
-            $table = EmailTemplate::where('name',$eTemp)->where('module_name','general')->exists();
-            if(!$table)
-            {
-                $emailtemplate=  EmailTemplate::create(
+        foreach ($emailTemplate as $eTemp) {
+            $table = EmailTemplate::where('name', $eTemp)->where('module_name', 'general')->exists();
+            if (!$table) {
+                $emailtemplate = EmailTemplate::create(
                     [
                         'name' => $eTemp,
-                        'from' =>  !empty(env('APP_NAME')) ? env('APP_NAME') : 'ERPGo SaaS',
+                        'from' => !empty(env('APP_NAME')) ? env('APP_NAME') : 'CUG ERP',
                         'module_name' => 'general',
                         'created_by' => $admin->id,
                         'creator_id' => $admin->id,
+                    ]
+                );
+                foreach ($defaultTemplate[$eTemp]['lang'] as $lang => $content) {
+                    EmailTemplateLang::create(
+                        [
+                            'parent_id' => $emailtemplate->id,
+                            'lang' => $lang,
+                            'subject' => $defaultTemplate[$eTemp]['subject'],
+                            'variables' => $defaultTemplate[$eTemp]['variables'],
+                            'content' => $content,
                         ]
                     );
-                    foreach($defaultTemplate[$eTemp]['lang'] as $lang => $content)
-                    {
-                        EmailTemplateLang::create(
-                            [
-                                'parent_id' => $emailtemplate->id,
-                                'lang' => $lang,
-                                'subject' => $defaultTemplate[$eTemp]['subject'],
-                                'variables' => $defaultTemplate[$eTemp]['variables'],
-                                'content' => $content,
-                            ]
-                        );
-                    }
+                }
             }
         }
 

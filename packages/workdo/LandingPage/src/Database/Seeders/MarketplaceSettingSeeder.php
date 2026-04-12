@@ -13,7 +13,7 @@ class MarketplaceSettingSeeder extends Seeder
         // Get all available screenshots from marketplace directory
         $marketplaceDir = __DIR__ . '/../../marketplace';
         $screenshots = [];
-        
+
         if (File::exists($marketplaceDir)) {
             $files = File::files($marketplaceDir);
             foreach ($files as $file) {
@@ -22,10 +22,10 @@ class MarketplaceSettingSeeder extends Seeder
                 }
             }
         }
-        
+
         // Sort screenshots to ensure consistent order
         sort($screenshots);
-        
+
         MarketplaceSetting::firstOrCreate(['module' => 'LandingPage'], [
             'module' => 'LandingPage',
             'title' => 'Landing Page Builder Marketplace',
@@ -34,7 +34,7 @@ class MarketplaceSettingSeeder extends Seeder
                 'sections' => [
                     'hero' => [
                         'variant' => 'hero1',
-                        'title' => 'Landing Page Builder for ERPGo SaaS',
+                        'title' => 'Landing Page Builder for CUG ERP',
                         'subtitle' => 'Create beautiful, responsive landing pages with our drag-and-drop builder and professional templates.',
                         'primary_button_text' => 'Install Builder',
                         'primary_button_link' => '#install',

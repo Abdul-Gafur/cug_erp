@@ -16,7 +16,7 @@ class CustomPageSeeder extends Seeder
                 'content' => '<div class="space-y-8">
                     <div class="text-center">
                         <h2 class="text-3xl font-bold text-gray-900 mb-4">Empowering Business Growth</h2>
-                        <p class="text-lg text-gray-600 max-w-3xl mx-auto">ERPGo SaaS is dedicated to providing robust business solutions that help companies streamline their operations and achieve sustainable growth.</p>
+                        <p class="text-lg text-gray-600 max-w-3xl mx-auto">CUG ERP is dedicated to providing robust business solutions that help companies streamline their operations and achieve sustainable growth.</p>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -69,7 +69,7 @@ class CustomPageSeeder extends Seeder
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900 mb-4">Data Privacy & Security</h2>
                         <p class="text-gray-600 mb-4">Last updated: ' . date('F d, Y') . '</p>
-                        <p class="text-gray-600 leading-relaxed">At ERPGo SaaS, we take the security of your business data seriously. This policy outlines how we collect, use, and protect your information.</p>
+                        <p class="text-gray-600 leading-relaxed">At CUG ERP, we take the security of your business data seriously. This policy outlines how we collect, use, and protect your information.</p>
                     </div>
                     
                     <div>
@@ -148,8 +148,8 @@ class CustomPageSeeder extends Seeder
                     
                     <div class="space-y-6">
                         <div class="bg-white border rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">What is ERPGo SaaS?</h3>
-                            <p class="text-gray-600 leading-relaxed">ERPGo SaaS is a comprehensive business management platform that helps companies streamline their operations, manage projects, and improve productivity through integrated tools and modules.</p>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">What is CUG ERP?</h3>
+                            <p class="text-gray-600 leading-relaxed">CUG ERP is a comprehensive business management platform that helps companies streamline their operations, manage projects, and improve productivity through integrated tools and modules.</p>
                         </div>
                         
                         <div class="bg-white border rounded-lg p-6">
@@ -164,7 +164,7 @@ class CustomPageSeeder extends Seeder
                         
                         <div class="bg-white border rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Can I customize the platform?</h3>
-                            <p class="text-gray-600 leading-relaxed">Yes! ERPGo SaaS offers extensive customization options including custom fields, workflows, dashboards, and integrations with third-party tools.</p>
+                            <p class="text-gray-600 leading-relaxed">Yes! CUG ERP offers extensive customization options including custom fields, workflows, dashboards, and integrations with third-party tools.</p>
                         </div>
                     </div>
                     

@@ -13,7 +13,7 @@ class MarketplaceSettingSeeder extends Seeder
         // Get all available screenshots from marketplace directory
         $marketplaceDir = __DIR__ . '/../../marketplace';
         $screenshots = [];
-        
+
         if (File::exists($marketplaceDir)) {
             $files = File::files($marketplaceDir);
             foreach ($files as $file) {
@@ -22,9 +22,9 @@ class MarketplaceSettingSeeder extends Seeder
                 }
             }
         }
-        
+
         sort($screenshots);
-        
+
         MarketplaceSetting::firstOrCreate(['module' => 'DoubleEntry'], [
             'module' => 'DoubleEntry',
             'title' => 'DoubleEntry Module Marketplace',
@@ -33,7 +33,7 @@ class MarketplaceSettingSeeder extends Seeder
                 'sections' => [
                     'hero' => [
                         'variant' => 'hero1',
-                        'title' => 'DoubleEntry Module for ERPGo SaaS',
+                        'title' => 'DoubleEntry Module for CUG ERP',
                         'subtitle' => 'Streamline your doubleentry workflow with comprehensive tools and automated management.',
                         'primary_button_text' => 'Install DoubleEntry Module',
                         'primary_button_link' => '#install',

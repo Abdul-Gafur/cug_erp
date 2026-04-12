@@ -17,7 +17,7 @@ class EmailTemplatesSeeder extends Seeder
      */
     public function run()
     {
-        $admin = User::where('type','company')->first();
+        $admin = User::where('type', 'company')->first();
 
         $emailTemplate = [
             'Deal Assigned',
@@ -229,22 +229,19 @@ class EmailTemplatesSeeder extends Seeder
 
 
         ];
-        foreach($emailTemplate as $eTemp)
-        {
-            $table = EmailTemplate::where('name',$eTemp)->where('module_name','Lead')->exists();
-            if(!$table)
-            {
-                $emailtemplate=  EmailTemplate::create(
+        foreach ($emailTemplate as $eTemp) {
+            $table = EmailTemplate::where('name', $eTemp)->where('module_name', 'Lead')->exists();
+            if (!$table) {
+                $emailtemplate = EmailTemplate::create(
                     [
-                    'name' => $eTemp,
-                    'from' => !empty(env('APP_NAME')) ? env('APP_NAME') : 'ERPGo SaaS',
-                    'module_name' => 'Lead',
-                    'created_by' => $admin->id,
-                    'creator_id' => $admin->id,
+                        'name' => $eTemp,
+                        'from' => !empty(env('APP_NAME')) ? env('APP_NAME') : 'CUG ERP',
+                        'module_name' => 'Lead',
+                        'created_by' => $admin->id,
+                        'creator_id' => $admin->id,
                     ]
                 );
-                foreach($defaultTemplate[$eTemp]['lang'] as $lang => $content)
-                {
+                foreach ($defaultTemplate[$eTemp]['lang'] as $lang => $content) {
                     EmailTemplateLang::create(
                         [
                             'parent_id' => $emailtemplate->id,

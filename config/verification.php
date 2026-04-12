@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'system' => 'ERPGo SaaS',
+    'system' => 'CUG ERP',
     'system_version' => '9.1',
 ];

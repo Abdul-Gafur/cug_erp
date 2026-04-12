@@ -23,20 +23,20 @@ interface HeaderProps {
 
 export default function Header({ data, getSectionData, updateSectionData, updateSectionVisibility, customPages }: HeaderProps) {
     const { t } = useTranslation();
-    
+
     const navigationItems = getSectionData('header').navigation_items || [];
-    
+
     const addNavigationItem = () => {
         const newItems = [...navigationItems, { text: '', href: '', type: 'link' }];
         updateSectionData('header', { navigation_items: newItems });
     };
-    
+
     const updateNavigationItem = (index: number, field: string, value: string) => {
         const newItems = [...navigationItems];
         newItems[index] = { ...newItems[index], [field]: value };
         updateSectionData('header', { navigation_items: newItems });
     };
-    
+
     const removeNavigationItem = (index: number) => {
         const newItems = navigationItems.filter((_: any, i: number) => i !== index);
         updateSectionData('header', { navigation_items: newItems });
@@ -89,7 +89,7 @@ export default function Header({ data, getSectionData, updateSectionData, update
                         <Input
                             value={getSectionData('header').company_name || ''}
                             onChange={(e) => updateSectionData('header', { company_name: e.target.value })}
-                            placeholder={t('ERPGo SaaS')}
+                            placeholder={t('CUG ERP')}
                         />
                     </div>
                     <div className="space-y-2">
@@ -100,7 +100,7 @@ export default function Header({ data, getSectionData, updateSectionData, update
                             placeholder={t('Get Started')}
                         />
                     </div>
-                     <div className="space-y-4">
+                    <div className="space-y-4">
                         <Label>{t('Display Options')}</Label>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="flex items-center space-x-2">
@@ -111,40 +111,40 @@ export default function Header({ data, getSectionData, updateSectionData, update
                                 <span className="text-sm">{t('Enable Pricing Link')}</span>
                             </div>
                         </div>
-                     </div>
-                    
+                    </div>
+
                     <div className="space-y-4">
                         <Label>{t('Navigation Menu')}</Label>
                         <Repeater
                             fields={[
                                 { name: 'text', label: t('Menu Text'), type: 'text', placeholder: t('Menu Text'), required: true },
-                                { 
-                                    name: 'type', 
-                                    label: t('Type'), 
-                                    type: 'select', 
+                                {
+                                    name: 'type',
+                                    label: t('Type'),
+                                    type: 'select',
                                     options: [
                                         { value: 'link', label: t('Link') },
                                         { value: 'page', label: t('Page') }
                                     ],
                                     required: true
                                 },
-                                { 
-                                    name: 'href', 
-                                    label: t('URL/Page'), 
+                                {
+                                    name: 'href',
+                                    label: t('URL/Page'),
                                     type: 'conditional',
                                     dependsOn: 'type',
                                     conditions: {
                                         link: { type: 'text', placeholder: t('Enter URL (e.g., #features, https://example.com)') },
-                                        page: { 
-                                            type: 'select', 
+                                        page: {
+                                            type: 'select',
                                             placeholder: t('Select Page'),
                                             options: customPages.map(page => ({ value: `/page/${page.slug}`, label: page.title }))
                                         }
                                     }
                                 },
-                                { 
-                                    name: 'target', 
-                                    label: t('Open in New Tab'), 
+                                {
+                                    name: 'target',
+                                    label: t('Open in New Tab'),
                                     type: 'checkbox'
                                 }
                             ]}
