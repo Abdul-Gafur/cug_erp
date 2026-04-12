@@ -119,19 +119,55 @@ export default function EmployeeDashboard({ message, stats }: EmployeeDashboardP
             });
         };
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    submitClockAction(position.coords.latitude, position.coords.longitude);
-                },
-                (error) => {
-                    console.error("Error getting geolocation:", error);
-                    submitClockAction(); // Backend will validate if geofencing is strict
-                },
-                { enableHighAccuracy: true }
-            );
-        } else {
+        // Skip location request for company/admin users
+        if (auth.user?.type === 'company') {
             submitClockAction();
+            return;
+        }
+
+        if (navigator.geolocation) {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            const success = (position: any) => {
+                submitClockAction(position.coords.latitude, position.coords.longitude);
+            };
+
+            const errorCallback = (error: any) => {
+                // If it timed out or high accuracy failed, try one more time with lower accuracy
+                if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+                    navigator.geolocation.getCurrentPosition(
+                        success,
+                        (err) => {
+                            let message = t('Enable location services to clock in/out.');
+                            if (err.code === err.PERMISSION_DENIED) {
+                                message = t('Location access was denied. Please allow location access in your browser settings to continue.');
+                            } else if (err.code === err.POSITION_UNAVAILABLE) {
+                                message = t('Location information is unavailable. Please ensure your device location services are turned on.');
+                            } else if (err.code === err.TIMEOUT) {
+                                message = t('The request to get user location timed out.');
+                            }
+                            alert(message);
+                        },
+                        { enableHighAccuracy: false, timeout: 5000 }
+                    );
+                } else {
+                    let message = t('Enable location services to clock in/out.');
+                    if (error.code === error.PERMISSION_DENIED) {
+                        message = t('Location access was denied. Please allow location access in your browser settings to continue.');
+                    } else {
+                        message = t('Location error: ') + error.message;
+                    }
+                    alert(message);
+                }
+            };
+
+            navigator.geolocation.getCurrentPosition(success, errorCallback, options);
+        } else {
+            alert(t('Geolocation is not supported by this browser.'));
         }
     };
 

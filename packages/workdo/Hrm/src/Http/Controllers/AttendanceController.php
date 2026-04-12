@@ -374,7 +374,7 @@ class AttendanceController extends Controller
             }
 
             // Check Geofence restriction
-            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on') {
+            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on' && Auth::user()->type != 'company') {
                 $compLat = $setting['company_latitude'] ?? '';
                 $compLon = $setting['company_longitude'] ?? '';
                 $compRadius = $setting['company_radius'] ?? 100;
@@ -494,7 +494,7 @@ class AttendanceController extends Controller
             }
 
             // Check Geofence restriction
-            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on') {
+            if (isset($setting['geofence_restrict']) && $setting['geofence_restrict'] === 'on' && Auth::user()->type != 'company') {
                 $compLat = $setting['company_latitude'] ?? '';
                 $compLon = $setting['company_longitude'] ?? '';
                 $compRadius = $setting['company_radius'] ?? 100;

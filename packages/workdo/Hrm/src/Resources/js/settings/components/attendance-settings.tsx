@@ -45,6 +45,29 @@ export default function AttendanceSettings({ userSettings, auth }: AttendanceSet
     setSettings(prev => ({ ...prev, geofence_restrict: checked }));
   };
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert(t('Geolocation is not supported by your browser'));
+      return;
+    }
+
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setSettings(prev => ({
+          ...prev,
+          company_latitude: position.coords.latitude.toString(),
+          company_longitude: position.coords.longitude.toString(),
+        }));
+        setIsLoading(false);
+      },
+      (error) => {
+        setIsLoading(false);
+        alert(t('Error getting location: ') + error.message);
+      }
+    );
+  };
+
   const saveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -105,48 +128,66 @@ export default function AttendanceSettings({ userSettings, auth }: AttendanceSet
           </div>
 
           {settings.geofence_restrict && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="space-y-3">
-                <Label htmlFor="company_latitude">{t('Company Latitude')}</Label>
-                <Input
-                  id="company_latitude"
-                  name="company_latitude"
-                  type="number"
-                  step="any"
-                  value={settings.company_latitude}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 5.6037"
-                  disabled={!canManage}
-                />
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex flex-col md:flex-row gap-4 items-end bg-muted/50 p-4 rounded-lg border border-dashed">
+                <div className="flex-1 space-y-2">
+                   <Label className="text-sm font-semibold">{t('Auto-detect Coordinates')}</Label>
+                   <p className="text-xs text-muted-foreground">
+                     {t('If you are currently at the office, you can automatically capture the coordinates.')}
+                   </p>
+                </div>
+                <Button variant="secondary" type="button" onClick={getCurrentLocation} className="shrink-0">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {t('Get My Current Location')}
+                </Button>
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="company_longitude">{t('Company Longitude')}</Label>
-                <Input
-                  id="company_longitude"
-                  name="company_longitude"
-                  type="number"
-                  step="any"
-                  value={settings.company_longitude}
-                  onChange={handleInputChange}
-                  placeholder="e.g. -0.1870"
-                  disabled={!canManage}
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="company_latitude">{t('Company Latitude')}</Label>
+                  <Input
+                    id="company_latitude"
+                    name="company_latitude"
+                    type="number"
+                    step="any"
+                    value={settings.company_latitude}
+                    onChange={handleInputChange}
+                    placeholder="e.g. 5.6037"
+                    disabled={!canManage}
+                  />
+                </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="company_radius">{t('Allowed Radius (meters)')}</Label>
-                <Input
-                  id="company_radius"
-                  name="company_radius"
-                  type="number"
-                  value={settings.company_radius}
-                  onChange={handleInputChange}
-                  min="1"
-                  placeholder="e.g. 100"
-                  disabled={!canManage}
-                />
+                <div className="space-y-3">
+                  <Label htmlFor="company_longitude">{t('Company Longitude')}</Label>
+                  <Input
+                    id="company_longitude"
+                    name="company_longitude"
+                    type="number"
+                    step="any"
+                    value={settings.company_longitude}
+                    onChange={handleInputChange}
+                    placeholder="e.g. -0.1870"
+                    disabled={!canManage}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="company_radius">{t('Allowed Radius (meters)')}</Label>
+                  <Input
+                    id="company_radius"
+                    name="company_radius"
+                    type="number"
+                    value={settings.company_radius}
+                    onChange={handleInputChange}
+                    min="1"
+                    placeholder="e.g. 100"
+                    disabled={!canManage}
+                  />
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground italic">
+                {t('Tip: You can also find these by right-clicking your office location on Google Maps and copying the numbers.')}
+              </p>
             </div>
           )}
         </div>
