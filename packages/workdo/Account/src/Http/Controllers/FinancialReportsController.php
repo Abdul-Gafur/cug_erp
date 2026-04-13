@@ -34,7 +34,7 @@ class FinancialReportsController extends Controller
             ->join('account_categories', 'chart_of_accounts.account_category_id', '=', 'account_categories.id')
             ->where('journal_entries.created_by', $createdBy)
             ->where('journal_entries.status', 'posted')
-            ->whereDate('journal_entries.entry_date', '<=', $asOfDate)
+            ->whereDate('journal_entries.journal_date', '<=', $asOfDate)
             ->select(
                 'chart_of_accounts.id as account_id',
                 'chart_of_accounts.account_code',
@@ -93,8 +93,8 @@ class FinancialReportsController extends Controller
             ->join('account_categories', 'chart_of_accounts.account_category_id', '=', 'account_categories.id')
             ->where('journal_entries.created_by', $createdBy)
             ->where('journal_entries.status', 'posted')
-            ->whereDate('journal_entries.entry_date', '>=', $fromDate)
-            ->whereDate('journal_entries.entry_date', '<=', $toDate)
+            ->whereDate('journal_entries.journal_date', '>=', $fromDate)
+            ->whereDate('journal_entries.journal_date', '<=', $toDate)
             ->whereIn('account_categories.type', ['revenue', 'Revenue', 'expense', 'Expense', 'Income', 'income'])
             ->select(
                 'chart_of_accounts.account_code',
@@ -209,8 +209,8 @@ class FinancialReportsController extends Controller
             ->where('journal_entries.created_by', $createdBy)
             ->where('journal_entries.status', 'posted')
             ->whereIn('account_categories.type', ['expense', 'Expense'])
-            ->whereDate('journal_entries.entry_date', '>=', $fromDate)
-            ->whereDate('journal_entries.entry_date', '<=', $toDate)
+            ->whereDate('journal_entries.journal_date', '>=', $fromDate)
+            ->whereDate('journal_entries.journal_date', '<=', $toDate)
             ->select(
                 'chart_of_accounts.account_name as category',
                 DB::raw('SUM(journal_entry_items.debit_amount) as actual_amount')
