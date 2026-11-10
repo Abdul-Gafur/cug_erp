@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/helpers';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Landmark } from 'lucide-react';
 
 interface GrnItem {
     id: number;
@@ -102,6 +102,22 @@ export default function GrnShow() {
                 </div>
             </div>
 
+            {grn.inspection_status === 'accepted' && (
+                <div className="mt-2 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                    <div>
+                        <h4 className="font-semibold text-blue-900 flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-blue-600" /> {t('GRN Accepted — Proceed to Payment')}
+                        </h4>
+                        <p className="text-sm text-blue-700">{t('Goods/Services have been inspected and accepted. You can now process the vendor payment voucher.')}</p>
+                    </div>
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => window.location.href = route('account.vendor-payments.index', { grn_number: grn.grn_number })}>
+                        <Landmark className="h-4 w-4 mr-2" />
+                        {t('Go to Payments')}
+                    </Button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Details */}
                 <div className="lg:col-span-1 space-y-4">
@@ -180,6 +196,21 @@ export default function GrnShow() {
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {grn.inspection_status === 'accepted' && (
+                        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h4 className="font-semibold text-purple-900 flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-4 w-4" /> {t('Ready for Payment')}
+                            </h4>
+                            <p className="text-sm text-purple-700 mb-3">
+                                {t('Goods/Services have been inspected and accepted. You can now initiate a payment voucher.')}
+                            </p>
+                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                                onClick={() => window.location.href = route('account.vendor-payments.index')}>
+                                {t('Go to Payments')}
+                            </Button>
+                        </div>
                     )}
                 </div>
 

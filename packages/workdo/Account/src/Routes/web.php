@@ -23,6 +23,7 @@ use Workdo\Account\Http\Controllers\FinancialReportsController;
 use Workdo\Account\Http\Controllers\FixedAssetCategoryController;
 use Workdo\Account\Http\Controllers\FixedAssetController;
 use Workdo\Account\Http\Controllers\AssetRegisterReportController;
+use Workdo\Account\Http\Controllers\WhtRegisterController;
 use Workdo\Account\Models\AccountType;
 
 Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group(function () {
@@ -67,6 +68,13 @@ Route::middleware(['web', 'auth', 'verified', 'PlanModuleCheck:Account'])->group
         Route::post('/{vendorPayment}/verify-invoice', [VendorPaymentController::class, 'verifyInvoice'])->name('verify-invoice');
         // Step 3 — 3-Stage Approval
         Route::post('/{vendorPayment}/approve', [VendorPaymentController::class, 'approve'])->name('approve');
+    });
+
+    Route::prefix('account/wht-register')->name('account.wht-register.')->group(function () {
+        Route::get('/', [WhtRegisterController::class, 'index'])->name('index');
+        Route::post('/remit', [WhtRegisterController::class, 'markRemitted'])->name('remit');
+        Route::post('/{whtRegister}/issue-certificate', [WhtRegisterController::class, 'issueCertificate'])->name('issue-certificate');
+        Route::get('/print', [WhtRegisterController::class, 'print'])->name('print');
     });
 
     Route::prefix('account/bank-transactions')->name('account.bank-transactions.')->group(function () {

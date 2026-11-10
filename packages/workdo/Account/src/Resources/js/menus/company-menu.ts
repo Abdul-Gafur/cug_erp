@@ -59,6 +59,10 @@ export const accountCompanyMenu = (t: (key: string) => string) => [
                 href: route('account.vendor-payments.index'),
                 permission: 'manage-vendor-payments',
             },
+                title: t('WHT Register'),
+                href: route('account.wht-register.index'),
+                permission: 'view-wht-register',
+            },
             {
                 title: t('Customer Payments'),
                 href: route('account.customer-payments.index'),

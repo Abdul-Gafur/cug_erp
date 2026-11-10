@@ -114,6 +114,39 @@ class CommitmentService
         });
     }
 
+    /**
+     * Payment cleared → permanently relieve the commitment.
+     * Marks the active commitment as 'paid' and reduces the committed_amount
+     * so that the corresponding actual spent amount (handled via Journal entries)
+     * correctly assumes that portion of the budget.
+     *
+     * @param int $lpoId Optional LPO ID to relieve commitments for
+     */
+    public function onPaymentCleared(int $lpoId): void
+    {
+        DB::transaction(function () use ($lpoId) {
+            $commitments = BudgetCommitment::where('source_type', 'lpo')
+                ->where('source_id', $lpoId)
+                ->whereIn('status', ['active', 'updated'])
+                ->get();
+
+            foreach ($commitments as $commitment) {
+                $commitment->update([
+                    'status' => 'paid',
+                ]);
+
+                // Decrement the allocation's committed_amount atomically
+                BudgetAllocation::where('id', $commitment->budget_allocation_id)
+                    ->decrement('committed_amount', $commitment->amount);
+
+                $allocation = BudgetAllocation::find($commitment->budget_allocation_id);
+                if ($allocation) {
+                    $this->writeAuditLog($allocation, 'paid', 'lpo', $lpoId, $commitment->amount);
+                }
+            }
+        });
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // Budget position — for display on transaction screens
     // ──────────────────────────────────────────────────────────────────────────

@@ -56,6 +56,8 @@ use Workdo\Retainer\Events\ConvertSalesRetainer;
 use Workdo\SalesAgent\Events\CreateSalesAgentCommissionPayment;
 use Workdo\SalesAgent\Events\UpdateSalesAgentCommissionPaymentStatus;
 use Workdo\SalesAgent\Events\ApproveSalesAgentCommissionAdjustment;
+use Workdo\Procurement\Events\GrnPosted;
+use Workdo\Account\Listeners\GrnPostedListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -151,6 +153,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         ApproveSalesAgentCommissionAdjustment::class => [
             ApproveSalesAgentCommissionAdjustmentLis::class,
+        ],
+        GrnPosted::class => [
+            GrnPostedListener::class,
         ],
 
     ];

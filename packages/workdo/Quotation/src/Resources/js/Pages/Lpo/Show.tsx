@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Download, CheckCircle, Mail, Package, Truck } from 'lucide-react';
+import { Download, CheckCircle, Mail, Package, Truck, Landmark } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
     draft:     'bg-gray-100 text-gray-800',
@@ -136,7 +136,6 @@ export default function Show() {
                                 </Button>
                             )}
 
-                            {/* Step 6: Delivery of Goods/Services — Create GRN */}
                             {['approved', 'emailed'].includes(lpo.status) && permissions.includes('create-grns') && (
                                 <Button size="sm" variant="default"
                                     onClick={() => router.visit(route('procurement.grns.create', { lpo_id: lpo.id }))}>
@@ -144,6 +143,22 @@ export default function Show() {
                                 </Button>
                             )}
                         </div>
+
+                        {lpo.received_status && ['partial', 'full'].includes(lpo.received_status) && (
+                            <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-semibold text-purple-900 flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4" /> {t('Ready for Payment Voucher')}
+                                    </h4>
+                                    <p className="text-sm text-purple-700">{t('Goods/Services have been received. You can now initiate an invoice submission and payment voucher.')}</p>
+                                </div>
+                                <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white"
+                                    onClick={() => window.location.href = route('account.vendor-payments.index')}>
+                                    <Landmark className="h-4 w-4 mr-2" />
+                                    {t('Go to Payments')}
+                                </Button>
+                            </div>
+                        )}
 
                         {lpo.status === 'approved' && lpo.approved_by_user && (
                             <p className="text-xs text-muted-foreground mt-3">

@@ -197,6 +197,7 @@ class FinancialReportsController extends Controller
             ->select(
                 'chart_of_accounts.account_name as category',
                 'budget_allocations.allocated_amount',
+                'budget_allocations.committed_amount',
                 DB::raw("'' as description"),
                 'budgets.budget_name as budget_name'
             )
@@ -233,6 +234,7 @@ class FinancialReportsController extends Controller
                 'budget_name'    => $budget->budget_name,
                 'description'    => $budget->description,
                 'budget_amount'  => (float) $budget->allocated_amount,
+                'committed_amount'=> (float) $budget->committed_amount,
                 'actual_amount'  => $actualAmt,
                 'variance'       => $variance,
                 'variance_pct'   => $variancePct,
@@ -247,6 +249,7 @@ class FinancialReportsController extends Controller
             'to_date'        => $toDate,
             'report'         => $report,
             'total_budget'   => $budgets->sum('allocated_amount'),
+            'total_committed'=> $budgets->sum('committed_amount'),
             'total_actual'   => $actuals->sum('actual_amount'),
             'total_variance' => $budgets->sum('allocated_amount') - $actuals->sum('actual_amount'),
         ]);

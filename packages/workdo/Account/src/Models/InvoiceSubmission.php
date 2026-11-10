@@ -11,6 +11,11 @@ class InvoiceSubmission extends Model
     protected $fillable = [
         'payment_id',
         'vendor_id',
+        // Structural 3-way match FK references
+        'lpo_id',
+        'grn_id',
+        'lpo_number',
+        'grn_number',
         'invoice_number',
         'invoice_date',
         'po_reference',
@@ -76,6 +81,30 @@ class InvoiceSubmission extends Model
     public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    /**
+     * Soft relationship to the LPO that generated this invoice submission.
+     * Returns null if the LPO package is not installed.
+     */
+    public function lpo()
+    {
+        if (class_exists(\Workdo\Quotation\Models\LocalPurchaseOrder::class)) {
+            return $this->belongsTo(\Workdo\Quotation\Models\LocalPurchaseOrder::class, 'lpo_id');
+        }
+        return null;
+    }
+
+    /**
+     * Soft relationship to the GRN that validated receipt.
+     * Returns null if the Procurement package is not installed.
+     */
+    public function grn()
+    {
+        if (class_exists(\Workdo\Procurement\Models\GoodsReceivedNote::class)) {
+            return $this->belongsTo(\Workdo\Procurement\Models\GoodsReceivedNote::class, 'grn_id');
+        }
+        return null;
     }
 
     // -----------------------------------------------------------------------

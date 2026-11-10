@@ -184,6 +184,9 @@ class PermissionTableSeeder extends Seeder
             ['name' => 'print-cash-flow', 'module' => 'account-reports', 'label' => 'Print Cash Flow Statement'],
             ['name' => 'view-budget-vs-actual', 'module' => 'account-reports', 'label' => 'View Budget vs Actual Report'],
             ['name' => 'print-budget-vs-actual', 'module' => 'account-reports', 'label' => 'Print Budget vs Actual Report'],
+            ['name' => 'view-wht-register', 'module' => 'account-reports', 'label' => 'View WHT Register'],
+            ['name' => 'manage-wht-register', 'module' => 'account-reports', 'label' => 'Manage WHT Register'],
+            ['name' => 'print-wht-register', 'module' => 'account-reports', 'label' => 'Print WHT Register'],
         ];
 
         $company_role = Role::where('name', 'company')->first();

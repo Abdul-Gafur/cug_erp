@@ -23,6 +23,7 @@ interface BudgetData {
     to_date: string;
     report: BudgetLine[];
     total_budget: number;
+    total_committed: number;
     total_actual: number;
     total_variance: number;
 }
@@ -86,6 +87,7 @@ export default function BudgetVsActual({ financialYear }: { financialYear?: { ye
                                     <th className="text-left px-4 py-2">{t('Category')}</th>
                                     <th className="text-left px-4 py-2">{t('Budget')}</th>
                                     <th className="text-right px-4 py-2">{t('Budget (GHS)')}</th>
+                                    <th className="text-right px-4 py-2">{t('Committed (GHS)')}</th>
                                     <th className="text-right px-4 py-2">{t('Actual (GHS)')}</th>
                                     <th className="text-right px-4 py-2">{t('Variance (GHS)')}</th>
                                     <th className="text-right px-4 py-2">{t('Var %')}</th>
@@ -100,6 +102,7 @@ export default function BudgetVsActual({ financialYear }: { financialYear?: { ye
                                         <td className="px-4 py-2 font-medium">{row.category}</td>
                                         <td className="px-4 py-2 text-xs text-gray-500">{row.budget_name}</td>
                                         <td className="px-4 py-2 text-right font-mono">{fmt(row.budget_amount)}</td>
+                                        <td className="px-4 py-2 text-right font-mono text-orange-600">{fmt(row.committed_amount)}</td>
                                         <td className="px-4 py-2 text-right font-mono">{fmt(row.actual_amount)}</td>
                                         <td className={`px-4 py-2 text-right font-mono font-semibold ${row.variance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                             {row.variance >= 0 ? '' : '('}{fmt(Math.abs(row.variance))}{row.variance < 0 ? ')' : ''}
@@ -115,6 +118,7 @@ export default function BudgetVsActual({ financialYear }: { financialYear?: { ye
                                 <tr>
                                     <td colSpan={2} className="px-4 py-2">{t('TOTALS')}</td>
                                     <td className="px-4 py-2 text-right font-mono">{fmt(data.total_budget)}</td>
+                                    <td className="px-4 py-2 text-right font-mono text-orange-600">{fmt(data.total_committed || 0)}</td>
                                     <td className="px-4 py-2 text-right font-mono">{fmt(data.total_actual)}</td>
                                     <td className={`px-4 py-2 text-right font-mono ${data.total_variance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                         {data.total_variance >= 0 ? '' : '('}{fmt(Math.abs(data.total_variance))}{data.total_variance < 0 ? ')' : ''}

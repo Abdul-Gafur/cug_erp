@@ -71,6 +71,11 @@ class VendorPayment extends Model
         return $this->hasOne(InvoiceSubmission::class, 'payment_id');
     }
 
+    public function whtRegisterEntry(): HasOne
+    {
+        return $this->hasOne(WhtRegister::class, 'payment_id');
+    }
+
     /** Head of Department */
     public function hodApprovedBy(): BelongsTo
     {
